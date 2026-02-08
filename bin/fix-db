@@ -1,0 +1,90 @@
+#!/bin/bash
+
+set -e
+
+echo "🔍 DIAGNOSTIC DE LA BASE DE DONNÉES"
+echo "===================================="
+echo ""
+
+# Vérifier si Docker tourne
+echo "1️⃣ Vérification de Docker..."
+if ! docker info > /dev/null 2>&1; then
+    echo "❌ Docker n'est pas démarré"
+    echo "   → Démarrez Docker Desktop et relancez ce script"
+    exit 1
+fi
+echo "✅ Docker est actif"
+echo ""
+
+# Vérifier les variables d'environnement
+echo "2️⃣ Variables d'environnement chargées..."
+if [ -f .env.local ]; then
+    source .env.local
+    echo "✅ .env.local chargé"
+    echo "   POSTGRES_USER: ${POSTGRES_USER:-non défini}"
+    echo "   POSTGRES_DB: ${POSTGRES_DB:-non défini}"
+    echo "   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-non défini}"
+else
+    echo "⚠️  .env.local n'existe pas"
+fi
+echo ""
+
+# Afficher l'état actuel des conteneurs
+echo "3️⃣ État des conteneurs..."
+docker compose ps
+echo ""
+
+# Afficher les logs récents
+echo "4️⃣ Logs récents de PostgreSQL..."
+if docker compose ps | grep -q kubodb; then
+    docker compose logs --tail=20 kubodb
+else
+    echo "⚠️  Le conteneur kubodb n'existe pas"
+fi
+echo ""
+
+echo "🔧 SOLUTION: Recréation complète de la base de données"
+echo "======================================================="
+echo ""
+read -p "Voulez-vous recréer complètement la base de données ? (o/N) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[OoYy]$ ]]; then
+    echo ""
+    echo "🗑️  Suppression des conteneurs et volumes existants..."
+    docker compose down -v
+
+    echo ""
+    echo "🧹 Nettoyage des volumes orphelins..."
+    docker volume prune -f
+
+    echo ""
+    echo "🚀 Création du nouveau conteneur avec les bons identifiants..."
+    docker compose up -d
+
+    echo ""
+    echo "⏳ Attente du démarrage de PostgreSQL (15 secondes)..."
+    sleep 15
+
+    echo ""
+    echo "✅ Test de la connexion..."
+    if docker compose exec kubodb pg_isready -U db_user -d kubo > /dev/null 2>&1; then
+        echo "✅ PostgreSQL est prêt !"
+        echo ""
+        echo "🔐 Identifiants de connexion:"
+        echo "   Host:     localhost"
+        echo "   Port:     7007"
+        echo "   Database: kubo"
+        echo "   User:     db_user"
+        echo "   Password: db_pass"
+        echo ""
+        echo "✅ Vous pouvez maintenant vous connecter depuis PHPStorm !"
+    else
+        echo "❌ Impossible de se connecter à PostgreSQL"
+        echo ""
+        echo "📋 Logs d'erreur:"
+        docker compose logs kubodb
+    fi
+else
+    echo "❌ Opération annulée"
+fi
+

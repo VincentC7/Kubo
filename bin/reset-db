@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Script de redémarrage de la base de données avec recréation
+
+echo "🔄 Arrêt des conteneurs..."
+docker compose down -v
+
+echo "🚀 Démarrage des conteneurs avec la nouvelle configuration..."
+docker compose up -d
+
+echo "⏳ Attente du démarrage de PostgreSQL..."
+sleep 5
+
+echo "✅ Vérification de la connexion..."
+docker compose exec kubodb pg_isready -U db_user -d kubo
+
+echo ""
+echo "📊 Informations de connexion:"
+echo "  Host:     localhost"
+echo "  Port:     7007"
+echo "  Database: kubo"
+echo "  User:     db_user"
+echo "  Password: db_pass"
+echo ""
+echo "🔍 Statut des conteneurs:"
+docker compose ps
+

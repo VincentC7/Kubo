@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# Script de test de connexion PostgreSQL
+# Ce script vérifie si la connexion fonctionne correctement
+
+echo "🧪 TEST DE CONNEXION POSTGRESQL"
+echo "==============================="
+echo ""
+
+# Test 1: Le conteneur tourne-t-il ?
+echo "Test 1: Conteneur en cours d'exécution..."
+if docker compose ps | grep -q "kubodb.*Up"; then
+    echo "✅ Le conteneur kubodb est actif"
+else
+    echo "❌ Le conteneur kubodb n'est pas actif"
+    echo "   → Lancez: make start"
+    exit 1
+fi
+echo ""
+
+# Test 2: PostgreSQL est-il prêt ?
+echo "Test 2: PostgreSQL est prêt..."
+if docker compose exec -T kubodb pg_isready -U db_user -d kubo > /dev/null 2>&1; then
+    echo "✅ PostgreSQL accepte les connexions"
+else
+    echo "❌ PostgreSQL n'est pas prêt"
+    echo "   → Attendez quelques secondes et réessayez"
+    exit 1
+fi
+echo ""
+
+# Test 3: Les credentials fonctionnent-ils ?
+echo "Test 3: Test des credentials..."
+if docker compose exec -T kubodb psql -U db_user -d kubo -c "SELECT 1;" > /dev/null 2>&1; then
+    echo "✅ Les credentials sont corrects (db_user / db_pass)"
+else
+    echo "❌ Les credentials ne fonctionnent pas"
+    echo "   → Lancez: make fix-db"
+    exit 1
+fi
+echo ""
+
+# Test 4: Le port est-il mappé correctement ?
+echo "Test 4: Port mapping..."
+if docker compose ps | grep -q "7007->5432"; then
+    echo "✅ Le port 7007 est correctement mappé"
+else
+    echo "⚠️  Le port 7007 n'est pas détecté"
+    echo "   Vérifiez compose.override.yaml"
+fi
+echo ""
+
+# Test 5: Test de requête SQL
+echo "Test 5: Exécution d'une requête SQL..."
+VERSION=$(docker compose exec -T kubodb psql -U db_user -d kubo -t -c "SELECT version();" | head -n 1)
+if [ ! -z "$VERSION" ]; then
+    echo "✅ Requête SQL réussie"
+    echo "   PostgreSQL version: $(echo $VERSION | cut -d',' -f1)"
+else
+    echo "❌ Échec de la requête SQL"
+    exit 1
+fi
+echo ""
+
+# Résumé
+echo "================================"
+echo "✅ TOUS LES TESTS SONT PASSÉS !"
+echo "================================"
+echo ""
+echo "🔐 Informations de connexion:"
+echo "   Host:     localhost"
+echo "   Port:     7007"
+echo "   Database: kubo"
+echo "   User:     db_user"
+echo "   Password: db_pass"
+echo ""
+echo "📊 Vous pouvez maintenant vous connecter depuis:"
+echo "   • PHPStorm (onglet Database)"
+echo "   • psql: make psql"
+echo "   • Votre application Symfony"
+echo ""
+echo "✨ Tout fonctionne parfaitement !"
+

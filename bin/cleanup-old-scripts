@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Script de nettoyage des anciens fichiers .sh à la racine
+# À exécuter une seule fois après le déplacement des scripts dans bin/
+
+echo "🧹 Nettoyage des anciens scripts..."
+echo ""
+
+OLD_FILES=(
+    "check-config.sh"
+    "fix-db.sh"
+    "reset-db.sh"
+    "test-connection.sh"
+)
+
+for file in "${OLD_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        echo "🗑️  Suppression de $file"
+        rm "$file"
+    else
+        echo "✓ $file déjà supprimé"
+    fi
+done
+
+echo ""
+echo "✅ Nettoyage terminé !"
+echo ""
+echo "📂 Les scripts sont maintenant dans le dossier bin/ :"
+echo "   • bin/check-config"
+echo "   • bin/fix-db"
+echo "   • bin/reset-db"
+echo "   • bin/test-connection"
+echo ""
+echo "🚀 Utilisez les commandes make habituelles :"
+echo "   • make check"
+echo "   • make fix-db"
+echo "   • make reset-docker"
+echo "   • make test-connection"
+

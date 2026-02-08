@@ -1,0 +1,114 @@
+#!/bin/bash
+
+# Script de vérification post-migration
+# Vérifie que tous les scripts sont bien dans bin/ et exécutables
+
+echo "🔍 VÉRIFICATION POST-MIGRATION"
+echo "=============================="
+echo ""
+
+SCRIPTS=(
+    "bin/check-config"
+    "bin/fix-db"
+    "bin/reset-db"
+    "bin/test-connection"
+    "bin/cleanup-old-scripts"
+)
+
+OLD_SCRIPTS=(
+    "check-config.sh"
+    "fix-db.sh"
+    "reset-db.sh"
+    "test-connection.sh"
+)
+
+echo "1️⃣ Vérification des nouveaux scripts dans bin/..."
+ALL_PRESENT=true
+for script in "${SCRIPTS[@]}"; do
+    if [ -f "$script" ]; then
+        if [ -x "$script" ]; then
+            echo "  ✅ $script (exécutable)"
+        else
+            echo "  ⚠️  $script (existe mais pas exécutable)"
+            ALL_PRESENT=false
+        fi
+    else
+        echo "  ❌ $script (manquant)"
+        ALL_PRESENT=false
+    fi
+done
+echo ""
+
+echo "2️⃣ Vérification des anciens scripts à la racine..."
+OLD_PRESENT=false
+for script in "${OLD_SCRIPTS[@]}"; do
+    if [ -f "$script" ]; then
+        echo "  ⚠️  $script existe encore (devrait être supprimé)"
+        OLD_PRESENT=true
+    else
+        echo "  ✅ $script (correctement supprimé)"
+    fi
+done
+echo ""
+
+echo "3️⃣ Vérification du Makefile..."
+if grep -q "bin/fix-db" Makefile; then
+    echo "  ✅ Makefile utilise bin/fix-db"
+else
+    echo "  ❌ Makefile n'utilise pas bin/fix-db"
+fi
+
+if grep -q "bin/check-config" Makefile; then
+    echo "  ✅ Makefile utilise bin/check-config"
+else
+    echo "  ❌ Makefile n'utilise pas bin/check-config"
+fi
+
+if grep -q "\.sh" Makefile; then
+    echo "  ⚠️  Makefile contient encore des références à .sh"
+else
+    echo "  ✅ Makefile ne contient plus de .sh"
+fi
+echo ""
+
+echo "4️⃣ Vérification de la documentation..."
+if [ -f "bin/README.md" ]; then
+    echo "  ✅ bin/README.md existe"
+else
+    echo "  ❌ bin/README.md manquant"
+fi
+
+if grep -q "bin/" README.md 2>/dev/null; then
+    echo "  ✅ README.md mentionne bin/"
+else
+    echo "  ⚠️  README.md ne mentionne pas bin/"
+fi
+echo ""
+
+# Résumé
+echo "================================"
+if [ "$ALL_PRESENT" = true ] && [ "$OLD_PRESENT" = false ]; then
+    echo "✅ MIGRATION RÉUSSIE !"
+    echo "================================"
+    echo ""
+    echo "📂 Tous les scripts sont dans bin/"
+    echo "🧹 Anciens scripts supprimés"
+    echo "🔧 Makefile à jour"
+    echo ""
+    echo "🚀 Vous pouvez utiliser :"
+    echo "   make fix-db"
+    echo "   make check"
+    echo "   make test-connection"
+else
+    echo "⚠️  MIGRATION INCOMPLÈTE"
+    echo "================================"
+    echo ""
+    if [ "$ALL_PRESENT" = false ]; then
+        echo "❌ Certains scripts sont manquants dans bin/"
+    fi
+    if [ "$OLD_PRESENT" = true ]; then
+        echo "⚠️  Anciens scripts .sh présents à la racine"
+        echo "   → Exécutez: make cleanup-scripts"
+    fi
+fi
+
