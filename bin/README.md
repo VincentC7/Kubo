@@ -1,6 +1,6 @@
-# Scripts utilitaires Kubo
+# Scripts utilitaires kubo-api
 
-Ce dossier contient les scripts shell utilitaires pour le projet Kubo.
+Ce dossier contient les scripts shell utilitaires pour le projet kubo-api.
 
 ## 📜 Scripts disponibles
 

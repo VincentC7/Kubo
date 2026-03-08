@@ -1,4 +1,4 @@
-# Configuration de la base de données - Kubo
+# Configuration de la base de données - kubo-api
 
 ## 📊 Informations de connexion
 

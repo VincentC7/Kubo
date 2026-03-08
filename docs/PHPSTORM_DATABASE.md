@@ -21,7 +21,7 @@ Remplissez les champs suivants dans la fenêtre qui s'ouvre :
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Name: Kubo PostgreSQL                                   │
+│ Name: kubo-api PostgreSQL                               │
 ├─────────────────────────────────────────────────────────┤
 │ Host: localhost                                         │
 │ Port: 7007                                              │
@@ -37,7 +37,7 @@ Remplissez les champs suivants dans la fenêtre qui s'ouvre :
 
 | Champ | Valeur |
 |-------|--------|
-| **Name** | `Kubo PostgreSQL` (ou le nom que vous voulez) |
+| **Name** | `kubo-api PostgreSQL` (ou le nom que vous voulez) |
 | **Host** | `localhost` |
 | **Port** | `7007` |
 | **Authentication** | `User & Password` |
@@ -96,7 +96,7 @@ Vous pouvez laisser les valeurs par défaut.
 Une fois connecté, vous devriez voir dans l'arborescence :
 
 ```
-📁 Kubo PostgreSQL
+📁 kubo-api PostgreSQL
   └─ 📁 kubo (database)
       ├─ 📁 schemas
       │   └─ 📁 public

@@ -1,8 +1,8 @@
-# GitHub Copilot Instructions - Projet Kubo
+# GitHub Copilot Instructions - Projet kubo-api
 
 ## 📋 Vue d'ensemble du projet
 
-**Kubo** est une application web développée avec Symfony 8.0, utilisant PHP 8.4 et PostgreSQL comme base de données.
+**kubo-api** est une application web développée avec Symfony 8.0, utilisant PHP 8.4 et PostgreSQL comme base de données.
 
 ### Technologies principales
 - **Framework**: Symfony 8.0

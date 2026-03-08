@@ -1,10 +1,10 @@
-# Kubo - Gestion alimentaire personnelle
+# kubo-api - Gestion alimentaire personnelle
 
 > Application web de planification des repas, de gestion des recettes et d'optimisation des courses du quotidien.
 
 ## 🎯 Description du projet
 
-**Kubo** est une application de gestion alimentaire personnelle qui aide l'utilisateur à :
+**kubo-api** est une application de gestion alimentaire personnelle qui aide l'utilisateur à :
 
 - 🥗 **Manger plus sainement** : suivre l'équilibre nutritionnel des repas
 - 💰 **Faire des économies** : optimiser les courses en fonction des recettes planifiées
