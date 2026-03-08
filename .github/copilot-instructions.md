@@ -43,12 +43,51 @@ Kubo/
 
 ## 🎯 Objectifs du projet
 
-[À compléter au fur et à mesure du développement]
+**Kubo** est une application de gestion alimentaire personnelle qui aide l'utilisateur à :
 
-- Application web moderne avec Symfony 8
-- Architecture RESTful et/ou MVC classique
-- Interface utilisateur réactive avec Stimulus/Turbo
-- Gestion de données avec Doctrine ORM
+- 🥗 **Manger plus sainement** : suivre l'équilibre nutritionnel des repas
+- 💰 **Faire des économies** : optimiser les courses en fonction des recettes planifiées
+- 😋 **Cuisiner avec plaisir** : choisir des recettes selon ses envies et préférences
+
+### Fonctionnalités métier
+
+> ⚠️ **Convention** : Dès qu'une nouvelle fonctionnalité métier est ajoutée, cette section doit être mise à jour en conséquence.
+
+#### 📖 Gestion des recettes
+- Créer, modifier et supprimer des recettes personnelles
+- Associer des ingrédients avec quantités et unités
+- Catégoriser les recettes (entrée, plat, dessert, snack…)
+- Taguer les recettes (végétarien, rapide, économique, healthy…)
+- Évaluer et noter ses recettes favorites
+- Filtrer/rechercher par tags, ingrédients disponibles, temps de préparation
+
+#### 🗓️ Planification des repas
+- Planifier les repas de la semaine (petit-déjeuner, déjeuner, dîner)
+- Choisir les recettes selon ses envies du moment
+- Visualiser le planning hebdomadaire
+- Adapter les portions selon le nombre de personnes
+
+#### 🛒 Liste de courses intelligente
+- Générer automatiquement la liste de courses depuis le planning
+- Regrouper les ingrédients par catégorie (légumes, viandes, épicerie…)
+- Déduire les ingrédients déjà disponibles (gestion du stock/garde-manger)
+- Estimer le coût approximatif des courses
+- Exporter / partager la liste de courses
+
+#### 🥦 Suivi nutritionnel _(optionnel)_
+- Afficher les apports nutritionnels par repas / par jour
+- Indiquer si le planning respecte un équilibre alimentaire
+- Mettre en avant les recettes saines selon des critères définis
+
+#### 🏪 Gestion du garde-manger
+- Gérer un inventaire des ingrédients disponibles à la maison
+- Suggérer des recettes réalisables avec les ingrédients en stock
+- Alerter sur les produits bientôt périmés
+
+### 👤 Utilisateurs cibles
+
+- **Utilisateur principal** : personne seule ou en couple souhaitant mieux s'organiser au quotidien
+- **Profil** : actif, soucieux de sa santé et de son budget, manque de temps pour planifier ses repas
 
 ## 🔧 Configuration de l'environnement
 
