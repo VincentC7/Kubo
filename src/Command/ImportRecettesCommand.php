@@ -2,14 +2,10 @@
 
 namespace App\Command;
 
-use App\Entity\Allergene;
 use App\Entity\Etape;
-use App\Entity\Ingredient;
 use App\Entity\NutritionFait;
 use App\Entity\Recette;
 use App\Entity\RecetteIngredient;
-use App\Entity\Tag;
-use App\Entity\Ustensile;
 use App\Repository\AllergeneRepository;
 use App\Repository\IngredientRepository;
 use App\Repository\RecetteRepository;
@@ -108,17 +104,11 @@ class ImportRecettesCommand extends Command
         $errors = [];
         $batchCount = 0;
 
-        foreach ($files as $i => $filePath) {
-            $slug = basename($filePath, '.json');
-            $progressBar->setMessage($slug);
+        foreach ($files as $filePath) {
+            $fileId = basename($filePath, '.json');
+            $progressBar->setMessage($fileId);
 
             try {
-                if ($skipExisting && $this->recetteRepository->findOneBySlug($slug) !== null) {
-                    $skipped++;
-                    $progressBar->advance();
-                    continue;
-                }
-
                 $json = file_get_contents($filePath);
                 if ($json === false) {
                     throw new \RuntimeException('Impossible de lire le fichier.');
@@ -126,14 +116,24 @@ class ImportRecettesCommand extends Command
 
                 $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
+                // Dédoublonnage par nom + source
+                $nom = trim((string) ($data['nom'] ?? $fileId));
+                $source = $data['url'] ?? null;
+
+                if ($skipExisting && $this->recetteRepository->findOneBy(['nom' => $nom]) !== null) {
+                    $skipped++;
+                    $progressBar->advance();
+                    continue;
+                }
+
                 // Validation
-                $violations = $this->validate($slug, $data);
+                $violations = $this->validate($fileId, $data);
                 $blockingViolations = array_values(array_intersect($violations, self::BLOCKING_VIOLATIONS));
 
                 if (count($blockingViolations) > 0) {
                     $this->logger->warning('Recette rejetée', [
-                        'slug'   => $slug,
-                        'raisons' => $blockingViolations,
+                        'fichier'  => $fileId,
+                        'raisons'  => $blockingViolations,
                     ]);
                     $rejected++;
                     $progressBar->advance();
@@ -141,10 +141,10 @@ class ImportRecettesCommand extends Command
                 }
 
                 if (in_array(self::VIOLATION_NO_DESCRIPTION, $violations, true)) {
-                    $this->logger->info('Recette importée sans description', ['slug' => $slug]);
+                    $this->logger->info('Recette importée sans description', ['fichier' => $fileId]);
                 }
 
-                $this->importRecette($slug, $data);
+                $this->importRecette($data);
                 $imported++;
                 $batchCount++;
 
@@ -160,11 +160,11 @@ class ImportRecettesCommand extends Command
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Erreur import', [
-                    'slug'  => $slug,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
+                    'fichier' => $fileId,
+                    'error'   => $e->getMessage(),
+                    'trace'   => $e->getTraceAsString(),
                 ]);
-                $errors[] = sprintf('%s : %s', $slug, $e->getMessage());
+                $errors[] = sprintf('%s : %s', $fileId, $e->getMessage());
 
                 // Si l'EntityManager est fermé suite à une erreur, le rouvrir
                 if (!$this->em->isOpen()) {
@@ -211,7 +211,7 @@ class ImportRecettesCommand extends Command
      * @param array<string, mixed> $data
      * @return list<string>
      */
-    private function validate(string $slug, array $data): array
+    private function validate(string $fileId, array $data): array
     {
         $violations = [];
 
@@ -247,22 +247,14 @@ class ImportRecettesCommand extends Command
     /**
      * @param array<string, mixed> $data
      */
-    private function importRecette(string $slug, array $data): void
+    private function importRecette(array $data): void
     {
-        // Chercher une recette existante pour la mettre à jour
-        $recette = $this->recetteRepository->findOneBySlug($slug);
+        $nom = trim((string) ($data['nom'] ?? 'Sans nom'));
+        $source = isset($data['url']) && $data['url'] !== '' ? $data['url'] : null;
 
-        if ($recette === null) {
-            $recette = new Recette(
-                slug: $slug,
-                url: $data['url'] ?? '',
-                nom: $data['nom'] ?? $slug,
-            );
-            $this->em->persist($recette);
-        } else {
-            $recette->setUrl($data['url'] ?? '');
-            $recette->setNom($data['nom'] ?? $slug);
-        }
+        $recette = new Recette($nom);
+        $recette->setSource($source);
+        $this->em->persist($recette);
 
         $description = $data['description'] ?? null;
         $recette->setDescription($description === '-' ? null : $description);
@@ -273,7 +265,6 @@ class ImportRecettesCommand extends Command
         $recette->setImageUrl($data['image'] ?: null);
 
         // Tags
-        $recette->getTags()->clear();
         foreach ($data['tags'] ?? [] as $tagNom) {
             $tagNom = $this->normalizeVocabulaire($tagNom);
             if ($tagNom === '') {
@@ -283,7 +274,6 @@ class ImportRecettesCommand extends Command
         }
 
         // Allergènes
-        $recette->getAllergenes()->clear();
         foreach ($data['allergenes'] ?? [] as $allergeneNom) {
             $allergeneNom = $this->normalizeAllergene($allergeneNom);
             if ($allergeneNom === '') {
@@ -293,7 +283,6 @@ class ImportRecettesCommand extends Command
         }
 
         // Ustensiles
-        $recette->getUstensiles()->clear();
         foreach ($data['ustensiles'] ?? [] as $ustensileNom) {
             $ustensileNom = trim($ustensileNom);
             if ($ustensileNom === '') {
@@ -302,12 +291,7 @@ class ImportRecettesCommand extends Command
             $recette->addUstensile($this->ustensileRepository->findOrCreate($ustensileNom));
         }
 
-        // Ingrédients — supprime les anciens avant de recréer
-        foreach ($recette->getRecetteIngredients() as $ri) {
-            $this->em->remove($ri);
-        }
-        $recette->getRecetteIngredients()->clear();
-
+        // Ingrédients
         foreach ($data['ingredients'] ?? [] as $raw) {
             $raw = trim((string) $raw);
             if ($raw === '') {
@@ -322,12 +306,7 @@ class ImportRecettesCommand extends Command
             $recette->addRecetteIngredient($ri);
         }
 
-        // Étapes — supprime les anciennes avant de recréer
-        foreach ($recette->getEtapes() as $etape) {
-            $this->em->remove($etape);
-        }
-        $recette->getEtapes()->clear();
-
+        // Étapes
         foreach ($data['etapes'] ?? [] as $etapeData) {
             $etape = new Etape($recette, (int) ($etapeData['step'] ?? 0));
             $etape->setInstructions(array_values(array_filter(
@@ -340,11 +319,6 @@ class ImportRecettesCommand extends Command
         }
 
         // Nutrition
-        foreach ($recette->getNutritionFaits() as $nf) {
-            $this->em->remove($nf);
-        }
-        $recette->getNutritionFaits()->clear();
-
         $nutrition = $data['nutrition'] ?? [];
         foreach ([NutritionFait::CONTEXTE_PORTION => 'portion', NutritionFait::CONTEXTE_100G => '100g'] as $const => $key) {
             $values = $nutrition[$key] ?? [];
@@ -409,7 +383,6 @@ class ImportRecettesCommand extends Command
             return null;
         }
         $value = (string) $value;
-        // Extraire le premier nombre (entier ou décimal, séparateur point ou virgule)
         if (preg_match('/[\d]+[.,]?[\d]*/', $value, $m)) {
             return (float) str_replace(',', '.', $m[0]);
         }
@@ -430,7 +403,6 @@ class ImportRecettesCommand extends Command
             '⅓' => '1/3', '⅔' => '2/3', '⅛' => '1/8',
         ]);
 
-        // Unités connues (ordre du plus long au plus court pour éviter les faux positifs)
         $unites = [
             'cuil\. à soupe', 'cuil\. à café', 'cs', 'cc',
             'pièce\(s\)', 'pièce', 'pièces',
@@ -447,10 +419,10 @@ class ImportRecettesCommand extends Command
         $unitesPattern = implode('|', $unites);
 
         $pattern = '/^'
-            . '(?P<quantite>\d+(?:[\/\-\.]\d+)?(?:\s*\d+\/\d+)?)?'  // quantité optionnelle
+            . '(?P<quantite>\d+(?:[\/\-\.]\d+)?(?:\s*\d+\/\d+)?)?'
             . '\s*'
-            . '(?P<unite>' . $unitesPattern . ')?'                    // unité optionnelle
-            . '\s*(?:de |d\')?'                                       // "de" ou "d'" optionnel
+            . '(?P<unite>' . $unitesPattern . ')?'
+            . '\s*(?:de |d\')?'
             . '(?P<nom>.+)$/iu';
 
         if (preg_match($pattern, trim($normalized), $matches)) {
@@ -462,7 +434,6 @@ class ImportRecettesCommand extends Command
                 $nom = $raw;
             }
 
-            // Nettoyer les parenthèses dans les unités : "pièce(s)" → "pièce(s)" reste tel quel
             return [$quantite, $unite ?: null, $nom];
         }
 
@@ -484,7 +455,6 @@ class ImportRecettesCommand extends Command
     {
         $value = $this->normalizeVocabulaire($value);
 
-        // "Gluten/Gluten" → "Gluten"
         if (preg_match('/^(.+?)\/\1$/', $value, $m)) {
             return $m[1];
         }
@@ -492,4 +462,3 @@ class ImportRecettesCommand extends Command
         return $value;
     }
 }
-

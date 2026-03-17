@@ -4,15 +4,18 @@ namespace App\Entity;
 
 use App\Repository\EtapeRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: EtapeRepository::class)]
 #[ORM\Table(name: 'etapes')]
 class Etape
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: UuidGenerator::class)]
+    private ?Uuid $id = null;
 
     #[ORM\ManyToOne(targetEntity: Recette::class, inversedBy: 'etapes')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -38,7 +41,7 @@ class Etape
         $this->numero = $numero;
     }
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }

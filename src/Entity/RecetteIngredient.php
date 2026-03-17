@@ -4,15 +4,18 @@ namespace App\Entity;
 
 use App\Repository\RecetteIngredientRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: RecetteIngredientRepository::class)]
 #[ORM\Table(name: 'recette_ingredients')]
 class RecetteIngredient
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: UuidGenerator::class)]
+    private ?Uuid $id = null;
 
     #[ORM\ManyToOne(targetEntity: Recette::class, inversedBy: 'recetteIngredients')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -41,7 +44,7 @@ class RecetteIngredient
         $this->raw = $raw;
     }
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }

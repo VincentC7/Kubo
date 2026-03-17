@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\NutritionFaitRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: NutritionFaitRepository::class)]
 #[ORM\Table(name: 'nutrition_faits')]
@@ -14,9 +16,10 @@ class NutritionFait
     public const CONTEXTE_100G = '100g';
 
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: UuidGenerator::class)]
+    private ?Uuid $id = null;
 
     #[ORM\ManyToOne(targetEntity: Recette::class, inversedBy: 'nutritionFaits')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -74,7 +77,7 @@ class NutritionFait
         $this->contexte = $contexte;
     }
 
-    public function getId(): ?int
+    public function getId(): ?Uuid
     {
         return $this->id;
     }
