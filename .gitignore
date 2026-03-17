@@ -47,3 +47,5 @@ composer.phar
 *.bak
 *.tmp
 ###< Backup files ###
+
+data/
