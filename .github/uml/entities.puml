@@ -1,0 +1,100 @@
+@startuml
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor White
+  BorderColor #444
+  ArrowColor #444
+}
+
+entity Recette {
+  + id : UUID <<PK>>
+  --
+  nom : string
+  description : text?
+  difficulte : string? <<Facile|Intermédiaire|Difficile>>
+  temps_total : int?
+  temps_preparation : int?
+  nb_personnes : int
+  image_url : string?
+  source : string?
+}
+
+entity Tag {
+  + id : UUID <<PK>>
+  --
+  nom : string <<unique>>
+}
+
+entity Allergene {
+  + id : UUID <<PK>>
+  --
+  nom : string <<unique>>
+}
+
+entity Ustensile {
+  + id : UUID <<PK>>
+  --
+  nom : string <<unique>>
+}
+
+entity Ingredient {
+  + id : UUID <<PK>>
+  --
+  nom : string <<unique>>
+}
+
+entity RecetteIngredient {
+  + id : UUID <<PK>>
+  --
+  recette_id : UUID <<FK>>
+  ingredient_id : UUID <<FK>>
+  quantite : string?
+  unite : string?
+  raw : string
+}
+
+entity Etape {
+  + id : UUID <<PK>>
+  --
+  recette_id : UUID <<FK>>
+  numero : int
+  instructions : json
+  astuce : text?
+}
+
+entity NutritionFait {
+  + id : UUID <<PK>>
+  --
+  recette_id : UUID <<FK>>
+  contexte : string <<portion|100g>>
+  energie_kj : float?
+  energie_kcal : float?
+  matieres_grasses : float?
+  acides_gras_satures : float?
+  glucides : float?
+  sucres : float?
+  fibres : float?
+  proteines : float?
+  sel : float?
+  potassium : float?
+  calcium : float?
+  cholesterol : float?
+  fer : float?
+  acides_gras_trans : float?
+}
+
+' ManyToMany
+Recette }o--o{ Tag : recette_tags
+Recette }o--o{ Allergene : recette_allergenes
+Recette }o--o{ Ustensile : recette_ustensiles
+
+' OneToMany
+Recette ||--o{ RecetteIngredient : "1 recette\n0..* lignes"
+Ingredient ||--o{ RecetteIngredient : "1 ingrédient\n0..* lignes"
+
+Recette ||--o{ Etape : "1 recette\n0..* étapes"
+Recette ||--o{ NutritionFait : "1 recette\n0..2 faits"
+
+@enduml

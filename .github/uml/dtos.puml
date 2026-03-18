@@ -1,0 +1,88 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #f9f9f9
+  BorderColor #444
+}
+
+class RecetteListItemDto <<readonly>> {
+  + uuid : string
+  + nom : string
+  + description : string?
+  + image_url : string?
+  + temps_total : int?
+  + difficulte : string?
+  + nb_personnes : int
+  + tags : string[]
+  --
+  + fromEntity(Recette) : self
+  + jsonSerialize() : array
+}
+
+class RecetteDetailDto <<readonly>> {
+  + uuid : string
+  + nom : string
+  + description : string?
+  + image_url : string?
+  + source : string?
+  + temps_total : int?
+  + temps_preparation : int?
+  + difficulte : string?
+  + nb_personnes : int
+  + tags : string[]
+  + allergenes : string[]
+  + ustensiles : string[]
+  + ingredients : IngredientDto[]
+  + etapes : EtapeDto[]
+  + nutrition : NutritionDto[]
+  --
+  + fromEntity(Recette) : self
+  + jsonSerialize() : array
+}
+
+class IngredientDto <<readonly>> {
+  + nom : string
+  + quantite : string?
+  + unite : string?
+  + raw : string
+  --
+  + fromEntity(RecetteIngredient) : self
+  + jsonSerialize() : array
+}
+
+class EtapeDto <<readonly>> {
+  + numero : int
+  + instructions : string[]
+  + astuce : string?
+  --
+  + fromEntity(Etape) : self
+  + jsonSerialize() : array
+}
+
+class NutritionDto <<readonly>> {
+  + contexte : string
+  + energie_kj : float?
+  + energie_kcal : float?
+  + matieres_grasses : float?
+  + acides_gras_satures : float?
+  + glucides : float?
+  + sucres : float?
+  + fibres : float?
+  + proteines : float?
+  + sel : float?
+  + potassium : float?
+  + calcium : float?
+  + cholesterol : float?
+  + fer : float?
+  + acides_gras_trans : float?
+  --
+  + fromEntity(NutritionFait) : self
+  + jsonSerialize() : array
+}
+
+RecetteDetailDto *-- "0..*" IngredientDto
+RecetteDetailDto *-- "0..*" EtapeDto
+RecetteDetailDto *-- "0..*" NutritionDto
+
+@enduml
