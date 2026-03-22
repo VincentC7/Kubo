@@ -22,6 +22,14 @@ class Ingredient
     #[ORM\Column(length: 255, unique: true)]
     private string $nom;
 
+    #[ORM\ManyToOne(targetEntity: TypeIngredient::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?TypeIngredient $type = null;
+
+    /** @var list<int>|null Mois de saison (1–12), uniquement pour fruits et légumes */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $moisSaison = null;
+
     #[ORM\OneToMany(targetEntity: RecetteIngredient::class, mappedBy: 'ingredient')]
     private Collection $recetteIngredients;
 
@@ -44,6 +52,32 @@ class Ingredient
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
+
+        return $this;
+    }
+
+    public function getType(): ?TypeIngredient
+    {
+        return $this->type;
+    }
+
+    public function setType(?TypeIngredient $type): static
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    /** @return list<int>|null */
+    public function getMoisSaison(): ?array
+    {
+        return $this->moisSaison;
+    }
+
+    /** @param list<int>|null $moisSaison */
+    public function setMoisSaison(?array $moisSaison): static
+    {
+        $this->moisSaison = $moisSaison;
 
         return $this;
     }

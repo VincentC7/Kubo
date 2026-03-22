@@ -67,6 +67,24 @@ use Symfony\Component\Routing\Attribute\Route;
     required: false,
     schema: new OA\Schema(type: 'string', example: 'tomate'),
 )]
+#[OA\Parameter(
+    name: 'type_ingredient',
+    description: 'Filtrer par type d\'ingrédient (slug exact)',
+    in: 'query',
+    required: false,
+    schema: new OA\Schema(
+        type: 'string',
+        enum: ['viande', 'poisson', 'legume', 'fruit', 'feculent', 'produit_laitier', 'herbe_epice', 'condiment', 'autre'],
+        example: 'viande',
+    ),
+)]
+#[OA\Parameter(
+    name: 'saison',
+    description: 'Filtrer les recettes ayant au moins 1 ingrédient de saison pour ce mois (1–12)',
+    in: 'query',
+    required: false,
+    schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 12, example: 7),
+)]
 #[OA\Response(
     response: 200,
     description: 'Liste paginée de recettes',
@@ -98,11 +116,13 @@ class RecetteListController extends AbstractController
         $limit = min(100, max(1, (int) $request->query->get('limit', 20)));
 
         $filters = array_filter([
-            'q'          => $request->query->get('q'),
-            'tag'        => $request->query->get('tag'),
-            'difficulte' => $request->query->get('difficulte'),
-            'temps_max'  => $request->query->get('temps_max'),
-            'ingredient' => $request->query->get('ingredient'),
+            'q'               => $request->query->get('q'),
+            'tag'             => $request->query->get('tag'),
+            'difficulte'      => $request->query->get('difficulte'),
+            'temps_max'       => $request->query->get('temps_max'),
+            'ingredient'      => $request->query->get('ingredient'),
+            'type_ingredient' => $request->query->get('type_ingredient'),
+            'saison'          => $request->query->get('saison'),
         ], fn ($v) => $v !== null && $v !== '');
 
         $result = $repository->findPaginated($filters, $page, $limit);

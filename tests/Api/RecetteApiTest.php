@@ -172,8 +172,8 @@ class RecetteApiTest extends WebTestCase
         $this->assertArrayHasKey('error', $json);
     }
 
-    // ── Test 10 : détail — ingredients non vide avec nom et raw ─────────────
-
+    // ── Test 10 : détail — ingredients non vide avec nom, raw, type, mois_saison
+    
     public function testDetailHasIngredients(): void
     {
         $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet);
@@ -186,9 +186,15 @@ class RecetteApiTest extends WebTestCase
         foreach ($json['ingredients'] as $ing) {
             $this->assertArrayHasKey('nom', $ing);
             $this->assertArrayHasKey('raw', $ing);
+            $this->assertArrayHasKey('type', $ing);
+            $this->assertArrayHasKey('mois_saison', $ing);
             $this->assertNotEmpty($ing['nom']);
             $this->assertNotEmpty($ing['raw']);
         }
+
+        // Le poulet a comme ingrédients : poulet (viande) et thym (herbe_epice)
+        $types = array_column($json['ingredients'], 'type');
+        $this->assertContains('viande', $types, 'Au moins un ingrédient de type "viande" attendu');
     }
 
     // ── Test 11 : détail — etapes non vide avec numero et instructions array
@@ -221,5 +227,33 @@ class RecetteApiTest extends WebTestCase
         $this->assertArrayHasKey('nutrition', $json);
         $this->assertNotEmpty($json['nutrition']);
         $this->assertSame('portion', $json['nutrition'][0]['contexte']);
+    }
+
+    // ── Test 13 : filtre ?type_ingredient=viande ─────────────────────────────
+
+    public function testListFilterByTypeIngredient(): void
+    {
+        $this->client->request('GET', '/api/recettes?type_ingredient=viande');
+
+        $json = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertArrayHasKey('data', $json);
+        $this->assertGreaterThanOrEqual(1, $json['meta']['total'], 'Doit retourner au moins 1 recette avec des ingrédients de type viande');
+    }
+
+    // ── Test 14 : filtre ?saison=11 retourne recettes avec citron (nov–mars) ─
+
+    public function testListFilterBySaison(): void
+    {
+        // La tarte au citron meringuée a du citron en saison en novembre (mois 11)
+        $this->client->request('GET', '/api/recettes?saison=11');
+
+        $json = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertArrayHasKey('data', $json);
+        $this->assertGreaterThanOrEqual(1, $json['meta']['total'], 'Doit retourner au moins 1 recette avec ingrédient de saison en novembre');
+
+        $noms = array_column($json['data'], 'nom');
+        $this->assertContains('Tarte au citron meringuée', $noms, 'La tarte au citron doit apparaître (citron en saison en novembre)');
     }
 }

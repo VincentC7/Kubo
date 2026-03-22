@@ -10,7 +10,9 @@ use App\Repository\AllergeneRepository;
 use App\Repository\IngredientRepository;
 use App\Repository\RecetteRepository;
 use App\Repository\TagRepository;
+use App\Repository\TypeIngredientRepository;
 use App\Repository\UstensileRepository;
+use App\Service\IngredientClassifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
@@ -50,6 +52,8 @@ class ImportRecettesCommand extends Command
         private readonly AllergeneRepository $allergeneRepository,
         private readonly IngredientRepository $ingredientRepository,
         private readonly UstensileRepository $ustensileRepository,
+        private readonly TypeIngredientRepository $typeIngredientRepository,
+        private readonly IngredientClassifier $ingredientClassifier,
         #[Autowire('%kernel.project_dir%')]
         private readonly string $projectDir,
         #[Autowire(service: 'monolog.logger.import')]
@@ -104,6 +108,9 @@ class ImportRecettesCommand extends Command
         $errors = [];
         $batchCount = 0;
 
+        // Pré-charger les types d'ingrédients une seule fois
+        $typesIndexedBySlug = $this->typeIngredientRepository->findAllIndexedBySlug();
+
         foreach ($files as $filePath) {
             $fileId = basename($filePath, '.json');
             $progressBar->setMessage($fileId);
@@ -144,7 +151,7 @@ class ImportRecettesCommand extends Command
                     $this->logger->info('Recette importée sans description', ['fichier' => $fileId]);
                 }
 
-                $this->importRecette($data);
+                $this->importRecette($data, $typesIndexedBySlug);
                 $imported++;
                 $batchCount++;
 
@@ -174,6 +181,8 @@ class ImportRecettesCommand extends Command
                     $this->allergeneRepository->clear();
                     $this->ingredientRepository->clear();
                     $this->ustensileRepository->clear();
+                    // Recharger les types après reset
+                    $typesIndexedBySlug = $this->typeIngredientRepository->findAllIndexedBySlug();
                 }
             }
 
@@ -246,8 +255,9 @@ class ImportRecettesCommand extends Command
 
     /**
      * @param array<string, mixed> $data
+     * @param array<string, \App\Entity\TypeIngredient> $typesIndexedBySlug
      */
-    private function importRecette(array $data): void
+    private function importRecette(array $data, array $typesIndexedBySlug): void
     {
         $nom = trim((string) ($data['nom'] ?? 'Sans nom'));
         $source = isset($data['url']) && $data['url'] !== '' ? $data['url'] : null;
@@ -298,7 +308,16 @@ class ImportRecettesCommand extends Command
                 continue;
             }
             [$quantite, $unite, $nom] = $this->parseIngredient($raw);
+            $isNew = $this->ingredientRepository->findOneByNom($nom) === null;
             $ingredient = $this->ingredientRepository->findOrCreate($nom);
+
+            // Classifier automatiquement les nouveaux ingrédients
+            if ($isNew && $ingredient->getType() === null) {
+                [$type, $moisSaison] = $this->ingredientClassifier->classify($nom, $typesIndexedBySlug);
+                $ingredient->setType($type);
+                $ingredient->setMoisSaison($moisSaison);
+            }
+
             $ri = new RecetteIngredient($recette, $ingredient, $raw);
             $ri->setQuantite($quantite);
             $ri->setUnite($unite);

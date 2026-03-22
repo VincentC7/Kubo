@@ -32,13 +32,15 @@ class RecetteRepository extends ServiceEntityRepository
      * Retourne une page de recettes filtrées et le total correspondant.
      *
      * Filtres supportés :
-     *   - q          : recherche texte sur nom et description (ILIKE)
-     *   - tag        : nom exact du tag
-     *   - difficulte : valeur exacte ('Facile', 'Intermédiaire', 'Difficile')
-     *   - temps_max  : tempsTotal <= N minutes
-     *   - ingredient : recherche texte sur le nom de l'ingrédient (ILIKE)
+     *   - q               : recherche texte sur nom et description (ILIKE)
+     *   - tag             : nom exact du tag
+     *   - difficulte      : valeur exacte ('Facile', 'Intermédiaire', 'Difficile')
+     *   - temps_max       : tempsTotal <= N minutes
+     *   - ingredient      : recherche texte sur le nom de l'ingrédient (ILIKE)
+     *   - type_ingredient : slug exact du TypeIngredient (ex: 'viande', 'legume')
+     *   - saison          : entier 1–12 — recettes ayant au moins 1 ingrédient dont mois_saison contient ce mois
      *
-     * @param array{q?: string, tag?: string, difficulte?: string, temps_max?: int|string, ingredient?: string} $filters
+     * @param array{q?: string, tag?: string, difficulte?: string, temps_max?: int|string, ingredient?: string, type_ingredient?: string, saison?: int|string} $filters
      * @return array{items: Recette[], total: int}
      */
     public function findPaginated(array $filters, int $page, int $limit): array
@@ -75,6 +77,23 @@ class RecetteRepository extends ServiceEntityRepository
                ->setParameter('ingredient', $ing);
         }
 
+        if (!empty($filters['type_ingredient'])) {
+            $qb->innerJoin('r.recetteIngredients', 'ri_type')
+               ->innerJoin('ri_type.ingredient', 'ing_type')
+               ->innerJoin('ing_type.type', 'type_filter')
+               ->andWhere('type_filter.slug = :type_ingredient')
+               ->setParameter('type_ingredient', $filters['type_ingredient']);
+        }
+
+        if (isset($filters['saison']) && $filters['saison'] !== '') {
+            $mois = (int) $filters['saison'];
+            // JSONB containment: mois_saison @> '[7]'::jsonb
+            $qb->innerJoin('r.recetteIngredients', 'ri_saison')
+               ->innerJoin('ri_saison.ingredient', 'ing_saison')
+               ->andWhere('JSONB_CONTAINS(ing_saison.moisSaison, :mois_json) = true')
+               ->setParameter('mois_json', json_encode([$mois]));
+        }
+
         // Total (clone avant pagination)
         $countQb = clone $qb;
         $total = (int) $countQb->select('COUNT(DISTINCT r.id)')
@@ -90,5 +109,22 @@ class RecetteRepository extends ServiceEntityRepository
                     ->getResult();
 
         return ['items' => $items, 'total' => $total];
+    }
+
+    /**
+     * Charge toutes les recettes avec eager loading des ingrédients et de leur type.
+     * Utilisé par MenuGeneratorService pour le scoring en mémoire.
+     *
+     * @return Recette[]
+     */
+    public function findAllForMenu(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->addSelect('ri', 'ing', 'type')
+            ->leftJoin('r.recetteIngredients', 'ri')
+            ->leftJoin('ri.ingredient', 'ing')
+            ->leftJoin('ing.type', 'type')
+            ->getQuery()
+            ->getResult();
     }
 }

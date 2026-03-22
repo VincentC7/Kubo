@@ -46,6 +46,8 @@ class IngredientDto <<readonly>> {
   + quantite : string?
   + unite : string?
   + raw : string
+  + type : string?
+  + mois_saison : int[]?
   --
   + fromEntity(RecetteIngredient) : self
   + jsonSerialize() : array
@@ -84,5 +86,18 @@ class NutritionDto <<readonly>> {
 RecetteDetailDto *-- "0..*" IngredientDto
 RecetteDetailDto *-- "0..*" EtapeDto
 RecetteDetailDto *-- "0..*" NutritionDto
+
+class CatalogueDto <<readonly>> {
+  + semaine : string
+  + recettes : RecetteListItemDto[]
+  + total : int
+  + page : int
+  + limit : int
+  + catalogueSize : int
+  --
+  + jsonSerialize() : array
+}
+
+CatalogueDto *-- "0..*" RecetteListItemDto
 
 @enduml

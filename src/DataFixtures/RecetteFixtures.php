@@ -9,6 +9,7 @@ use App\Entity\NutritionFait;
 use App\Entity\Recette;
 use App\Entity\RecetteIngredient;
 use App\Entity\Tag;
+use App\Entity\TypeIngredient;
 use App\Entity\Ustensile;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
@@ -24,6 +25,23 @@ class RecetteFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
+        // ── TypeIngredients ──────────────────────────────────────────────────
+        $typeViande   = new TypeIngredient('Viande',               'viande');
+        $typeLegume   = new TypeIngredient('Légume',               'legume');
+        $typeFruit    = new TypeIngredient('Fruit',                'fruit');
+        $typeFeculent = new TypeIngredient('Féculent',             'feculent');
+        $typeLaitier  = new TypeIngredient('Produit laitier',      'produit_laitier');
+        $typeHerbe    = new TypeIngredient('Herbe / épice',        'herbe_epice');
+        $typeCondim   = new TypeIngredient('Condiment / sauce',    'condiment');
+        $typeAutre    = new TypeIngredient('Autre',                'autre');
+        // (poisson non utilisé dans les fixtures mais créé pour cohérence)
+        $typePoisson  = new TypeIngredient('Poisson / fruit de mer', 'poisson');
+
+        foreach ([$typeViande, $typeLegume, $typeFruit, $typeFeculent, $typeLaitier,
+                  $typeHerbe, $typeCondim, $typeAutre, $typePoisson] as $t) {
+            $manager->persist($t);
+        }
+
         // ── Tags ─────────────────────────────────────────────────────────────
         $tagViande     = new Tag('Viande');
         $tagRapide     = new Tag('Rapide');
@@ -57,16 +75,16 @@ class RecetteFixtures extends Fixture
         }
 
         // ── Ingrédients ──────────────────────────────────────────────────────
-        $ingPoulet     = new Ingredient('poulet');
-        $ingThym       = new Ingredient('thym');
-        $ingSalade     = new Ingredient('salade romaine');
-        $ingParmesan   = new Ingredient('parmesan');
-        $ingRiz        = new Ingredient('riz arborio');
-        $ingChampignon = new Ingredient('champignons');
-        $ingBoeuf      = new Ingredient('bœuf');
-        $ingVinRouge   = new Ingredient('vin rouge');
-        $ingCitron     = new Ingredient('citron');
-        $ingOeufs      = new Ingredient('œufs');
+        $ingPoulet     = (new Ingredient('poulet'))->setType($typeViande);
+        $ingThym       = (new Ingredient('thym'))->setType($typeHerbe);
+        $ingSalade     = (new Ingredient('salade romaine'))->setType($typeLegume)->setMoisSaison([4, 5, 6, 7, 8, 9, 10]);
+        $ingParmesan   = (new Ingredient('parmesan'))->setType($typeLaitier);
+        $ingRiz        = (new Ingredient('riz arborio'))->setType($typeFeculent);
+        $ingChampignon = (new Ingredient('champignons'))->setType($typeLegume)->setMoisSaison([9, 10, 11]);
+        $ingBoeuf      = (new Ingredient('bœuf'))->setType($typeViande);
+        $ingVinRouge   = (new Ingredient('vin rouge'))->setType($typeCondim);
+        $ingCitron     = (new Ingredient('citron'))->setType($typeFruit)->setMoisSaison([11, 12, 1, 2, 3]);
+        $ingOeufs      = (new Ingredient('œufs'))->setType($typeAutre);
 
         foreach ([$ingPoulet, $ingThym, $ingSalade, $ingParmesan, $ingRiz, $ingChampignon,
                   $ingBoeuf, $ingVinRouge, $ingCitron, $ingOeufs] as $ing) {

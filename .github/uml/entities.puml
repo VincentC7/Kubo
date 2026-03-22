@@ -39,10 +39,26 @@ entity Ustensile {
   nom : string <<unique>>
 }
 
+entity TypeIngredient {
+  + id : UUID <<PK>>
+  --
+  nom : string <<unique>>
+  slug : string <<unique>>
+}
+
+note right of TypeIngredient
+  9 types : viande, poisson,
+  legume, fruit, feculent,
+  produit_laitier, herbe_epice,
+  condiment, autre
+end note
+
 entity Ingredient {
   + id : UUID <<PK>>
   --
   nom : string <<unique>>
+  type_id : UUID? <<FK>>
+  mois_saison : jsonb? <<int[1..12]>>
 }
 
 entity RecetteIngredient {
@@ -93,6 +109,7 @@ Recette }o--o{ Ustensile : recette_ustensiles
 ' OneToMany
 Recette ||--o{ RecetteIngredient : "1 recette\n0..* lignes"
 Ingredient ||--o{ RecetteIngredient : "1 ingrédient\n0..* lignes"
+TypeIngredient ||--o{ Ingredient : "1 type\n0..* ingrédients"
 
 Recette ||--o{ Etape : "1 recette\n0..* étapes"
 Recette ||--o{ NutritionFait : "1 recette\n0..2 faits"
