@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Ingredient;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @extends ServiceEntityRepository<Ingredient>
@@ -47,5 +48,25 @@ class IngredientRepository extends ServiceEntityRepository
     public function clear(): void
     {
         $this->cache = [];
+    }
+
+    /**
+     * Retourne tous les fruits et légumes de saison pour un mois donné (1–12),
+     * triés par type (fruit/légume) puis par nom.
+     *
+     * @return Ingredient[]
+     */
+    public function findBySaison(int $mois): array
+    {
+        return $this->createQueryBuilder('i')
+            ->innerJoin('i.type', 't')
+            ->addSelect('t')
+            ->andWhere("t.slug IN ('fruit', 'legume')")
+            ->andWhere('JSONB_CONTAINS(i.moisSaison, :mois) = TRUE')
+            ->setParameter('mois', json_encode([$mois]))
+            ->orderBy('t.slug', 'ASC')
+            ->addOrderBy('i.nom', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 }
