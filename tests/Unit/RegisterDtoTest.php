@@ -8,15 +8,17 @@ use Symfony\Component\Validator\Validation;
 
 class RegisterDtoTest extends TestCase
 {
-    private function validate(string $email, string $password): array
+    private function validate(string $email, string $password, string $firstName = 'Alice', string $lastName = 'Martin'): array
     {
         $validator = Validation::createValidatorBuilder()
             ->enableAttributeMapping()
             ->getValidator();
 
-        $dto           = new RegisterDto();
-        $dto->email    = $email;
-        $dto->password = $password;
+        $dto            = new RegisterDto();
+        $dto->firstName = $firstName;
+        $dto->lastName  = $lastName;
+        $dto->email     = $email;
+        $dto->password  = $password;
 
         return iterator_to_array($validator->validate($dto));
     }
@@ -27,6 +29,18 @@ class RegisterDtoTest extends TestCase
     {
         $violations = $this->validate('user@example.com', 'Password1');
         $this->assertCount(0, $violations);
+    }
+
+    public function testMissingFirstNameFails(): void
+    {
+        $violations = $this->validate('user@example.com', 'Password1', '', 'Martin');
+        $this->assertGreaterThanOrEqual(1, count($violations));
+    }
+
+    public function testMissingLastNameFails(): void
+    {
+        $violations = $this->validate('user@example.com', 'Password1', 'Alice', '');
+        $this->assertGreaterThanOrEqual(1, count($violations));
     }
 
     // ── Email validation ──────────────────────────────────────────────────────

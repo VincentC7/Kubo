@@ -6,6 +6,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class RegisterDto
 {
+    #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
+    #[Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.')]
+    public string $firstName = '';
+
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
+    #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.')]
+    public string $lastName = '';
+
     #[Assert\NotBlank(message: 'L\'email est obligatoire.')]
     #[Assert\Email(message: 'L\'email {{ value }} n\'est pas valide.')]
     #[Assert\Length(max: 180, maxMessage: 'L\'email ne peut pas dépasser {{ limit }} caractères.')]

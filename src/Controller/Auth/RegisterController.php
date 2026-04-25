@@ -39,8 +39,10 @@ class RegisterController extends AbstractController
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['email', 'password'],
+                required: ['firstName', 'lastName', 'email', 'password'],
                 properties: [
+                    new OA\Property(property: 'firstName', type: 'string', example: 'Jean'),
+                    new OA\Property(property: 'lastName', type: 'string', example: 'Dupont'),
                     new OA\Property(property: 'email', type: 'string', format: 'email', example: 'user@example.com'),
                     new OA\Property(property: 'password', type: 'string', format: 'password', example: 'MonMotDePasse1', minLength: 8),
                 ],
@@ -71,6 +73,8 @@ class RegisterController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         $dto = new RegisterDto();
+        $dto->firstName = trim($data['firstName'] ?? '');
+        $dto->lastName = trim($data['lastName'] ?? '');
         $dto->email = strtolower(trim($data['email'] ?? ''));
         $dto->password = $data['password'] ?? '';
 
@@ -95,6 +99,8 @@ class RegisterController extends AbstractController
 
         // Création du user
         $user = new User();
+        $user->setFirstName($dto->firstName);
+        $user->setLastName($dto->lastName);
         $user->setEmail($dto->email);
         $user->setRoles(['ROLE_USER']);
         $user->setPassword(

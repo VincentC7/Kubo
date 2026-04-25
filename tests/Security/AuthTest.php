@@ -31,12 +31,26 @@ class AuthTest extends ApiTestCase
             [],
             [],
             $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
-            json_encode(['email' => 'new@kubo.dev', 'password' => 'NewPass1']),
+            json_encode(['firstName' => 'Alice', 'lastName' => 'Martin', 'email' => 'new@kubo.dev', 'password' => 'NewPass1']),
         );
 
         $this->assertResponseStatusCodeSame(201);
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertArrayHasKey('message', $json);
+    }
+
+    public function testRegisterWithoutFirstNameReturns400(): void
+    {
+        $this->client->request(
+            'POST',
+            '/api/register',
+            [],
+            [],
+            $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
+            json_encode(['lastName' => 'Martin', 'email' => 'new2@kubo.dev', 'password' => 'NewPass1']),
+        );
+
+        $this->assertResponseStatusCodeSame(400);
     }
 
     public function testRegisterWithInvalidEmailReturns400(): void
@@ -47,7 +61,7 @@ class AuthTest extends ApiTestCase
             [],
             [],
             $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
-            json_encode(['email' => 'not-an-email', 'password' => 'Password1']),
+            json_encode(['firstName' => 'Alice', 'lastName' => 'Martin', 'email' => 'not-an-email', 'password' => 'Password1']),
         );
 
         $this->assertResponseStatusCodeSame(400);
@@ -61,7 +75,7 @@ class AuthTest extends ApiTestCase
             [],
             [],
             $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
-            json_encode(['email' => 'weak@kubo.dev', 'password' => 'short']),
+            json_encode(['firstName' => 'Alice', 'lastName' => 'Martin', 'email' => 'weak@kubo.dev', 'password' => 'short']),
         );
 
         $this->assertResponseStatusCodeSame(400);
@@ -76,7 +90,7 @@ class AuthTest extends ApiTestCase
             [],
             [],
             $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
-            json_encode(['email' => 'user@kubo.dev', 'password' => 'Password1']),
+            json_encode(['firstName' => 'Alice', 'lastName' => 'Martin', 'email' => 'user@kubo.dev', 'password' => 'Password1']),
         );
 
         $this->assertResponseStatusCodeSame(409);

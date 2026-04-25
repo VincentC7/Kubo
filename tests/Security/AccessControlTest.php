@@ -6,9 +6,9 @@ use App\Tests\ApiTestCase;
 
 /**
  * Tests access control rules:
- * - /api/catalogue → public (X-Api-Key only, no JWT)
- * - /api/recettes  → requires JWT (ROLE_USER)
- * - /api/ingredients/saison → requires JWT (ROLE_USER)
+ * - /api/catalogue         → public (X-Api-Key only, no JWT)
+ * - /api/recettes          → public (X-Api-Key only, no JWT)
+ * - /api/ingredients/saison → public (X-Api-Key only, no JWT)
  */
 class AccessControlTest extends ApiTestCase
 {
@@ -21,13 +21,13 @@ class AccessControlTest extends ApiTestCase
         $this->assertResponseIsSuccessful();
     }
 
-    // ── /api/recettes requires JWT ────────────────────────────────────────────
+    // ── /api/recettes is public (no JWT required) ─────────────────────────────
 
-    public function testRecettesWithoutJwtReturns401(): void
+    public function testRecettesAccessibleWithoutJwt(): void
     {
         $this->client->request('GET', '/api/recettes', [], [], $this->apiHeaders());
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseIsSuccessful();
     }
 
     public function testRecettesWithValidJwtReturns200(): void
@@ -55,13 +55,13 @@ class AccessControlTest extends ApiTestCase
         $this->assertNotSame(401, $this->client->getResponse()->getStatusCode());
     }
 
-    // ── /api/ingredients/saison requires JWT ─────────────────────────────────
+    // ── /api/ingredients/saison is public (no JWT required) ──────────────────
 
-    public function testSaisonWithoutJwtReturns401(): void
+    public function testSaisonAccessibleWithoutJwt(): void
     {
         $this->client->request('GET', '/api/ingredients/saison?mois=6', [], [], $this->apiHeaders());
 
-        $this->assertResponseStatusCodeSame(401);
+        $this->assertResponseIsSuccessful();
     }
 
     public function testSaisonWithValidJwtReturns200(): void

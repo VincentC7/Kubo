@@ -18,6 +18,8 @@ class AppFixtures extends Fixture
     {
         // User standard
         $user = new User();
+        $user->setFirstName('Jean');
+        $user->setLastName('Dupont');
         $user->setEmail('user@kubo.dev');
         $user->setRoles(['ROLE_USER']);
         $user->setPassword($this->passwordHasher->hashPassword($user, 'Password1'));
@@ -25,6 +27,8 @@ class AppFixtures extends Fixture
 
         // Admin
         $admin = new User();
+        $admin->setFirstName('Admin');
+        $admin->setLastName('Kubo');
         $admin->setEmail('admin@kubo.dev');
         $admin->setRoles(['ROLE_ADMIN']);
         $admin->setPassword($this->passwordHasher->hashPassword($admin, 'AdminPass1'));
