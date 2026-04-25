@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Dto\CatalogueDto;
 use App\Dto\RecetteListItemDto;
-use App\Security\User;
+use App\Entity\User;
 use App\Service\MenuGeneratorService;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
@@ -56,8 +56,11 @@ class CatalogueController extends AbstractController
 {
     public function __invoke(Request $request, MenuGeneratorService $generator): JsonResponse
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = $this->getUser();
+
+        // Pour les visiteurs non authentifiés, on utilise un UUID générique
+        $userId = ($user instanceof User) ? $user->getId() : null;
 
         // Parse semaine
         $weekParam = $request->query->get('week');
@@ -72,7 +75,7 @@ class CatalogueController extends AbstractController
         $page  = max(1, (int) $request->query->get('page', 1));
         $limit = min(50, max(1, (int) $request->query->get('limit', 20)));
 
-        $result = $generator->buildCataloguePage($user->getId(), $isoYear, $isoWeek, $page, $limit);
+        $result = $generator->buildCataloguePage($userId, $isoYear, $isoWeek, $page, $limit);
 
         $dtos = array_map(
             fn ($recette) => RecetteListItemDto::fromEntity($recette),

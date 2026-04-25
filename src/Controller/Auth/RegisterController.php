@@ -32,9 +32,9 @@ class RegisterController extends AbstractController
     ) {
     }
 
-    #[Route('/api/auth/register', name: 'api_auth_register', methods: ['POST'])]
+    #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     #[OA\Post(
-        path: '/api/auth/register',
+        path: '/api/register',
         summary: 'Créer un nouveau compte utilisateur',
         requestBody: new OA\RequestBody(
             required: true,

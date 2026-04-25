@@ -3,36 +3,41 @@
 namespace App\Tests\Api;
 
 use App\DataFixtures\RecetteFixtures;
+use App\Tests\ApiTestCase;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class SaisonApiTest extends WebTestCase
+class SaisonApiTest extends ApiTestCase
 {
-    private KernelBrowser $client;
+    private string $token;
 
-    protected function setUp(): void
+    protected function loadFixtures(): void
     {
-        $this->client = static::createClient();
-
         /** @var EntityManagerInterface $em */
         $em = static::getContainer()->get(EntityManagerInterface::class);
 
         $loader = new Loader();
+        $loader->addFixture(static::getContainer()->get(\App\DataFixtures\AppFixtures::class));
         $loader->addFixture(new RecetteFixtures());
+
         $purger   = new ORMPurger($em);
         $executor = new ORMExecutor($em, $purger);
         $executor->execute($loader->getFixtures());
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->token = $this->loginAs('user@kubo.dev', 'Password1');
     }
 
     // ── Test 1 : GET /api/ingredients/saison retourne 200 avec la structure attendue ────────
 
     public function testSaisonReturns200WithStructure(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=6');
+        $this->client->request('GET', '/api/ingredients/saison?mois=6', [], [], $this->authHeaders($this->token));
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
@@ -52,7 +57,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonItemStructure(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=6');
+        $this->client->request('GET', '/api/ingredients/saison?mois=6', [], [], $this->authHeaders($this->token));
 
         $json  = json_decode($this->client->getResponse()->getContent(), true);
         $items = $json['data'];
@@ -72,7 +77,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMois6ContientSalade(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=6');
+        $this->client->request('GET', '/api/ingredients/saison?mois=6', [], [], $this->authHeaders($this->token));
 
         $json  = json_decode($this->client->getResponse()->getContent(), true);
         $noms  = array_column($json['data'], 'nom');
@@ -84,7 +89,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMois6NePasCitron(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=6');
+        $this->client->request('GET', '/api/ingredients/saison?mois=6', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $noms = array_column($json['data'], 'nom');
@@ -96,7 +101,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMois1ContientCitron(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=1');
+        $this->client->request('GET', '/api/ingredients/saison?mois=1', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $noms = array_column($json['data'], 'nom');
@@ -108,7 +113,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMois8PasChampignons(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=8');
+        $this->client->request('GET', '/api/ingredients/saison?mois=8', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $noms = array_column($json['data'], 'nom');
@@ -120,7 +125,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMois10ContientChampignons(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=10');
+        $this->client->request('GET', '/api/ingredients/saison?mois=10', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $noms = array_column($json['data'], 'nom');
@@ -132,7 +137,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonSansParametreRetourne200(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison');
+        $this->client->request('GET', '/api/ingredients/saison', [], [], $this->authHeaders($this->token));
 
         $this->assertResponseIsSuccessful();
 
@@ -146,7 +151,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMoisInvalideZero(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=0');
+        $this->client->request('GET', '/api/ingredients/saison?mois=0', [], [], $this->authHeaders($this->token));
 
         $this->assertResponseStatusCodeSame(400);
         $json = json_decode($this->client->getResponse()->getContent(), true);
@@ -157,7 +162,7 @@ class SaisonApiTest extends WebTestCase
 
     public function testSaisonMoisInvalideTreeize(): void
     {
-        $this->client->request('GET', '/api/ingredients/saison?mois=13');
+        $this->client->request('GET', '/api/ingredients/saison?mois=13', [], [], $this->authHeaders($this->token));
 
         $this->assertResponseStatusCodeSame(400);
         $json = json_decode($this->client->getResponse()->getContent(), true);

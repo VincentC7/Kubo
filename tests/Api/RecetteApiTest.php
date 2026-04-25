@@ -4,45 +4,50 @@ namespace App\Tests\Api;
 
 use App\DataFixtures\RecetteFixtures;
 use App\Entity\Recette;
+use App\Tests\ApiTestCase;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class RecetteApiTest extends WebTestCase
+class RecetteApiTest extends ApiTestCase
 {
-    private KernelBrowser $client;
-    private EntityManagerInterface $em;
     private string $uuidPoulet;
+    private string $token;
+
+    protected function loadFixtures(): void
+    {
+        /** @var EntityManagerInterface $em */
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+
+        $loader = new Loader();
+        $loader->addFixture(static::getContainer()->get(\App\DataFixtures\AppFixtures::class));
+        $loader->addFixture(new RecetteFixtures());
+
+        $purger   = new ORMPurger($em);
+        $executor = new ORMExecutor($em, $purger);
+        $executor->execute($loader->getFixtures());
+    }
 
     protected function setUp(): void
     {
-        $this->client = static::createClient();
+        parent::setUp();
 
         /** @var EntityManagerInterface $em */
         $em = static::getContainer()->get(EntityManagerInterface::class);
-        $this->em = $em;
 
-        // Load fixtures
-        $loader = new Loader();
-        $loader->addFixture(new RecetteFixtures());
-        $purger   = new ORMPurger($this->em);
-        $executor = new ORMExecutor($this->em, $purger);
-        $executor->execute($loader->getFixtures());
-
-        // Récupère l'UUID du poulet dynamiquement
-        $poulet = $this->em->getRepository(Recette::class)->findOneBy(['nom' => 'Poulet rôti aux herbes']);
+        $poulet = $em->getRepository(Recette::class)->findOneBy(['nom' => 'Poulet rôti aux herbes']);
         $this->assertNotNull($poulet, 'La fixture "Poulet rôti aux herbes" est introuvable.');
         $this->uuidPoulet = (string) $poulet->getId();
+
+        $this->token = $this->loginAs('user@kubo.dev', 'Password1');
     }
 
     // ── Test 1 : GET /api/recettes retourne 200 avec data + meta ────────────
 
     public function testListReturns200WithDataAndMeta(): void
     {
-        $this->client->request('GET', '/api/recettes');
+        $this->client->request('GET', '/api/recettes', [], [], $this->authHeaders($this->token));
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
@@ -57,7 +62,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListMetaHasRequiredFields(): void
     {
-        $this->client->request('GET', '/api/recettes');
+        $this->client->request('GET', '/api/recettes', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $meta = $json['meta'];
@@ -74,7 +79,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListPaginationLimit2(): void
     {
-        $this->client->request('GET', '/api/recettes?page=1&limit=2');
+        $this->client->request('GET', '/api/recettes?page=1&limit=2', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -87,7 +92,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListFilterByTag(): void
     {
-        $this->client->request('GET', '/api/recettes?tag=Viande');
+        $this->client->request('GET', '/api/recettes?tag=Viande', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -101,13 +106,12 @@ class RecetteApiTest extends WebTestCase
 
     public function testListFilterByQuery(): void
     {
-        $this->client->request('GET', '/api/recettes?q=poulet');
+        $this->client->request('GET', '/api/recettes?q=poulet', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertGreaterThanOrEqual(1, $json['meta']['total']);
         $this->assertNotEmpty($json['data']);
-        // Le premier résultat doit mentionner "poulet" dans le nom (insensible à la casse)
         $nom = mb_strtolower($json['data'][0]['nom']);
         $this->assertStringContainsString('poulet', $nom);
     }
@@ -116,7 +120,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListFilterByTempsMax(): void
     {
-        $this->client->request('GET', '/api/recettes?temps_max=20');
+        $this->client->request('GET', '/api/recettes?temps_max=20', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -130,7 +134,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListFilterByDifficulte(): void
     {
-        $this->client->request('GET', '/api/recettes?difficulte=Facile');
+        $this->client->request('GET', '/api/recettes?difficulte=Facile', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -144,7 +148,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testDetailReturns200WithScalarFields(): void
     {
-        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet);
+        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet, [], [], $this->authHeaders($this->token));
 
         $this->assertResponseIsSuccessful();
 
@@ -164,7 +168,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testDetailNotFound(): void
     {
-        $this->client->request('GET', '/api/recettes/00000000-0000-0000-0000-000000000000');
+        $this->client->request('GET', '/api/recettes/00000000-0000-0000-0000-000000000000', [], [], $this->authHeaders($this->token));
 
         $this->assertResponseStatusCodeSame(404);
 
@@ -173,10 +177,10 @@ class RecetteApiTest extends WebTestCase
     }
 
     // ── Test 10 : détail — ingredients non vide avec nom, raw, type, mois_saison
-    
+
     public function testDetailHasIngredients(): void
     {
-        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet);
+        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet, [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -192,7 +196,6 @@ class RecetteApiTest extends WebTestCase
             $this->assertNotEmpty($ing['raw']);
         }
 
-        // Le poulet a comme ingrédients : poulet (viande) et thym (herbe_epice)
         $types = array_column($json['ingredients'], 'type');
         $this->assertContains('viande', $types, 'Au moins un ingrédient de type "viande" attendu');
     }
@@ -201,7 +204,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testDetailHasEtapes(): void
     {
-        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet);
+        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet, [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -220,7 +223,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testDetailHasNutrition(): void
     {
-        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet);
+        $this->client->request('GET', '/api/recettes/' . $this->uuidPoulet, [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -233,7 +236,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListFilterByTypeIngredient(): void
     {
-        $this->client->request('GET', '/api/recettes?type_ingredient=viande');
+        $this->client->request('GET', '/api/recettes?type_ingredient=viande', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
@@ -245,8 +248,7 @@ class RecetteApiTest extends WebTestCase
 
     public function testListFilterBySaison(): void
     {
-        // La tarte au citron meringuée a du citron en saison en novembre (mois 11)
-        $this->client->request('GET', '/api/recettes?saison=11');
+        $this->client->request('GET', '/api/recettes?saison=11', [], [], $this->authHeaders($this->token));
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 

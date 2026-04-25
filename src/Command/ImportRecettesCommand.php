@@ -164,6 +164,8 @@ class ImportRecettesCommand extends Command
                     $this->allergeneRepository->clear();
                     $this->ingredientRepository->clear();
                     $this->ustensileRepository->clear();
+                    // Recharger les types après clear() — les objets détachés ne sont plus utilisables
+                    $typesIndexedBySlug = $this->typeIngredientRepository->findAllIndexedBySlug();
                 }
             } catch (\Throwable $e) {
                 $this->logger->error('Erreur import', [

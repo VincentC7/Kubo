@@ -21,3 +21,13 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    # ApiKeySubscriber : injection de la clé API depuis l'env
+    App\EventSubscriber\ApiKeySubscriber:
+        arguments:
+            $apiKey: '%env(API_KEY)%'
+
+    # Rate limiter : alias explicite pour l'injection dans RegisterController
+    App\Controller\Auth\RegisterController:
+        arguments:
+            $registerApiLimiter: '@limiter.register_api'

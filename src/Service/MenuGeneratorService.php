@@ -40,7 +40,7 @@ final class MenuGeneratorService
      *
      * @return array{recettes: Recette[], total: int, catalogue_size: int}
      */
-    public function buildOrderedCatalogue(string $userId, int $isoYear, int $isoWeek): array
+    public function buildOrderedCatalogue(string|null $userId, int $isoYear, int $isoWeek): array
     {
         $allRecettes = $this->recetteRepository->findAllForMenu();
         $currentMonth = $this->currentMonth($isoYear, $isoWeek);
@@ -85,7 +85,7 @@ final class MenuGeneratorService
      * @return array{recettes: Recette[], total: int, catalogue_size: int}
      */
     public function buildCataloguePage(
-        string $userId,
+        string|null $userId,
         int    $isoYear,
         int    $isoWeek,
         int    $page,
@@ -160,9 +160,10 @@ final class MenuGeneratorService
     /**
      * Calcule la seed entière à partir de l'user et de la semaine ISO.
      */
-    private function computeSeed(string $userId, int $isoYear, int $isoWeek): int
+    private function computeSeed(string|null $userId, int $isoYear, int $isoWeek): int
     {
-        return crc32($userId . $isoYear . sprintf('%02d', $isoWeek));
+        // Pour les visiteurs non connectés, on utilise un seed basé sur la semaine uniquement
+        return crc32(($userId ?? 'guest') . $isoYear . sprintf('%02d', $isoWeek));
     }
 
     /**

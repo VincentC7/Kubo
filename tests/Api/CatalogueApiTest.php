@@ -3,28 +3,25 @@
 namespace App\Tests\Api;
 
 use App\DataFixtures\RecetteFixtures;
+use App\Tests\ApiTestCase;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class CatalogueApiTest extends WebTestCase
+class CatalogueApiTest extends ApiTestCase
 {
     private const WEEK = '2026-W12';
 
-    private KernelBrowser $client;
-
-    protected function setUp(): void
+    protected function loadFixtures(): void
     {
-        $this->client = static::createClient();
-
         /** @var EntityManagerInterface $em */
         $em = static::getContainer()->get(EntityManagerInterface::class);
 
         $loader = new Loader();
+        $loader->addFixture(static::getContainer()->get(\App\DataFixtures\AppFixtures::class));
         $loader->addFixture(new RecetteFixtures());
+
         $purger   = new ORMPurger($em);
         $executor = new ORMExecutor($em, $purger);
         $executor->execute($loader->getFixtures());
@@ -34,7 +31,7 @@ class CatalogueApiTest extends WebTestCase
 
     public function testCatalogueReturns200WithStructure(): void
     {
-        $this->client->request('GET', '/api/catalogue?week=' . self::WEEK);
+        $this->client->request('GET', '/api/catalogue?week=' . self::WEEK, [], [], $this->apiHeaders());
 
         $this->assertResponseIsSuccessful();
         $this->assertResponseHeaderSame('Content-Type', 'application/json');
@@ -52,7 +49,7 @@ class CatalogueApiTest extends WebTestCase
 
     public function testCatalogueMetaHasCatalogueSize(): void
     {
-        $this->client->request('GET', '/api/catalogue?week=' . self::WEEK);
+        $this->client->request('GET', '/api/catalogue?week=' . self::WEEK, [], [], $this->apiHeaders());
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
         $meta = $json['meta'];
@@ -73,10 +70,10 @@ class CatalogueApiTest extends WebTestCase
     {
         $url = '/api/catalogue?week=' . self::WEEK;
 
-        $this->client->request('GET', $url);
+        $this->client->request('GET', $url, [], [], $this->apiHeaders());
         $json1 = json_decode($this->client->getResponse()->getContent(), true);
 
-        $this->client->request('GET', $url);
+        $this->client->request('GET', $url, [], [], $this->apiHeaders());
         $json2 = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertSame(
@@ -90,10 +87,10 @@ class CatalogueApiTest extends WebTestCase
 
     public function testCatalogueDiffersAcrossWeeks(): void
     {
-        $this->client->request('GET', '/api/catalogue?week=2026-W12&limit=5');
+        $this->client->request('GET', '/api/catalogue?week=2026-W12&limit=5', [], [], $this->apiHeaders());
         $json1 = json_decode($this->client->getResponse()->getContent(), true);
 
-        $this->client->request('GET', '/api/catalogue?week=2026-W30&limit=5');
+        $this->client->request('GET', '/api/catalogue?week=2026-W30&limit=5', [], [], $this->apiHeaders());
         $json2 = json_decode($this->client->getResponse()->getContent(), true);
 
         $this->assertCount(5, array_column($json1['recettes'], 'uuid'));
@@ -104,7 +101,7 @@ class CatalogueApiTest extends WebTestCase
 
     public function testCatalogueInvalidWeek(): void
     {
-        $this->client->request('GET', '/api/catalogue?week=foobar');
+        $this->client->request('GET', '/api/catalogue?week=foobar', [], [], $this->apiHeaders());
 
         $this->assertResponseStatusCodeSame(400);
         $json = json_decode($this->client->getResponse()->getContent(), true);
@@ -115,7 +112,7 @@ class CatalogueApiTest extends WebTestCase
 
     public function testCataloguePagination(): void
     {
-        $this->client->request('GET', '/api/catalogue?week=' . self::WEEK . '&page=1&limit=2');
+        $this->client->request('GET', '/api/catalogue?week=' . self::WEEK . '&page=1&limit=2', [], [], $this->apiHeaders());
 
         $json = json_decode($this->client->getResponse()->getContent(), true);
 
