@@ -2,29 +2,67 @@ security:
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_USER]
+
     providers:
-        users_in_memory: { memory: null }
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
 
     firewalls:
         dev:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
 
-        # Firewall stateless pour les endpoints menu/catalogue
-        # À migrer vers JWT : remplacer custom_authenticators par le bundle LexikJWT
-        api_secured:
-            pattern: ^/api/catalogue
+        # Endpoint de login
+        api_login:
+            pattern: ^/api/login$
             stateless: true
-            provider: users_in_memory
-            custom_authenticators:
-                - App\Security\UserIdHeaderAuthenticator
+            provider: app_user_provider
+            json_login:
+                check_path: /api/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+        # Endpoint refresh token
+        api_refresh:
+            pattern: ^/api/token/refresh$
+            stateless: true
+            provider: app_user_provider
+            refresh_jwt:
+                check_path: /api/token/refresh
+
+        # Tous les autres endpoints /api/* : JWT optionnel
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            jwt: ~
 
         main:
             lazy: true
-            provider: users_in_memory
+            provider: app_user_provider
 
     access_control:
-        - { path: ^/api/catalogue, roles: ROLE_USER }
+        # Preflight CORS — OPTIONS doit passer sans auth
+        - { path: ^/api/, methods: OPTIONS, roles: PUBLIC_ACCESS }
+        # Documentation publique
+        - { path: ^/api/doc, roles: PUBLIC_ACCESS }
+        # Register et login : publics (API Key vérifiée par l'EventSubscriber)
+        - { path: ^/api/register$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/token/refresh$, roles: PUBLIC_ACCESS }
+        # Catalogue : public (API Key suffit, pas de JWT requis)
+        - { path: ^/api/catalogue, roles: PUBLIC_ACCESS }
+        # Recettes et ingrédients de saison : publics (API Key suffit)
+        - { path: ^/api/recettes, roles: PUBLIC_ACCESS }
+        - { path: ^/api/ingredients/saison, roles: PUBLIC_ACCESS }
+        # Tout le reste : JWT requis (ROLE_USER minimum)
+        - { path: ^/api, roles: ROLE_USER }
 
 when@test:
     security:
