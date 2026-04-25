@@ -31,3 +31,8 @@ services:
     App\Controller\Auth\PostRegisterEndpoint:
         arguments:
             $registerApiLimiter: '@limiter.register_api'
+
+    # Rate limiter : alias explicite pour le brute-force login
+    App\EventSubscriber\LoginRateLimiterSubscriber:
+        arguments:
+            $loginApiLimiter: '@limiter.login_api'

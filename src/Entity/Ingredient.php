@@ -27,7 +27,7 @@ class Ingredient
     private ?TypeIngredient $type = null;
 
     /** @var list<int>|null Mois de saison (1–12), uniquement pour fruits et légumes */
-    #[ORM\Column(type: 'json', nullable: true)]
+    #[ORM\Column(type: 'json', nullable: true, options: ['jsonb' => true])]
     private ?array $moisSaison = null;
 
     #[ORM\OneToMany(targetEntity: RecetteIngredient::class, mappedBy: 'ingredient')]

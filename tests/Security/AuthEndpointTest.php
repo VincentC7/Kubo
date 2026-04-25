@@ -96,7 +96,37 @@ class AuthEndpointTest extends ApiTestCase
         $this->assertResponseStatusCodeSame(409);
     }
 
-    // ── Login ─────────────────────────────────────────────────────────────────
+    // ── Rate limiter ──────────────────────────────────────────────────────────
+
+    public function testRegisterRateLimiterReturns429AfterThreeAttempts(): void
+    {
+        // Les 3 premières tentatives doivent passer (même si elles échouent pour d'autres raisons)
+        for ($i = 0; $i < 3; $i++) {
+            $this->client->request(
+                'POST',
+                '/api/register',
+                [],
+                [],
+                $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
+                json_encode(['firstName' => 'Test', 'lastName' => 'User', 'email' => "attempt{$i}@kubo.dev", 'password' => 'TestPass1']),
+            );
+            $this->assertNotSame(429, $this->client->getResponse()->getStatusCode(), "La tentative $i ne devrait pas être limitée.");
+        }
+
+        // La 4ème doit retourner 429
+        $this->client->request(
+            'POST',
+            '/api/register',
+            [],
+            [],
+            $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
+            json_encode(['firstName' => 'Test', 'lastName' => 'User', 'email' => 'attempt4@kubo.dev', 'password' => 'TestPass1']),
+        );
+
+        $this->assertResponseStatusCodeSame(429);
+        $json = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('error', $json);
+    }
 
     public function testLoginReturnsTokenAndRefreshToken(): void
     {

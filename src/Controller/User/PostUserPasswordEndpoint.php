@@ -47,8 +47,10 @@ class PostUserPasswordEndpoint extends AbstractController
     )]
     public function __invoke(Request $request): JsonResponse
     {
-        /** @var User $user */
         $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw new \LogicException('Cet endpoint nécessite une authentification JWT (ROLE_USER).');
+        }
 
         $data = json_decode($request->getContent(), true) ?? [];
         $currentPassword = $data['currentPassword'] ?? '';
@@ -57,7 +59,15 @@ class PostUserPasswordEndpoint extends AbstractController
         // Vérifier le mot de passe actuel
         if (!$this->passwordHasher->isPasswordValid($user, $currentPassword)) {
             return $this->json(
-                ['errors' => ['currentPassword' => 'Mot de passe actuel incorrect.']],
+                ['errors' => ['currentPassword' => ['Mot de passe actuel incorrect.']]],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        // Refuser si le nouveau mot de passe est identique à l'ancien
+        if ($this->passwordHasher->isPasswordValid($user, $newPassword)) {
+            return $this->json(
+                ['errors' => ['newPassword' => ['Le nouveau mot de passe doit être différent de l\'actuel.']]],
                 Response::HTTP_BAD_REQUEST,
             );
         }
@@ -73,7 +83,7 @@ class PostUserPasswordEndpoint extends AbstractController
         if (count($violations) > 0) {
             $errors = [];
             foreach ($violations as $v) {
-                $errors['newPassword'] = $v->getMessage();
+                $errors['newPassword'][] = $v->getMessage();
             }
 
             return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);

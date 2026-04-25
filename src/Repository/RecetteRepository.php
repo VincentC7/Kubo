@@ -100,8 +100,10 @@ class RecetteRepository extends ServiceEntityRepository
                                ->getQuery()
                                ->getSingleScalarResult();
 
-        // Items paginés
+        // Items paginés — eager-load des tags pour éviter le N+1
         $items = $qb->select('r')
+                    ->leftJoin('r.tags', 't_list')
+                    ->addSelect('t_list')
                     ->orderBy('r.nom', 'ASC')
                     ->setFirstResult(($page - 1) * $limit)
                     ->setMaxResults($limit)

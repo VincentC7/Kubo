@@ -191,9 +191,40 @@ final class IngredientClassifier
      */
     private function detectType(string $nomLower, array $typesIndexedBySlug): TypeIngredient
     {
+        // ── Exclusions prioritaires ────────────────────────────────────────────
+        // Ces chaînes doivent être exclues des patterns généraux avant toute détection.
+
+        // "rôti" dans le nom (ex: "chou-fleur rôti") ne doit pas classifier en viande
+        // "pommes de terre" ne doit pas classifier en fruit via "pomme"
+        // "haricots blancs/rouges/noirs" → féculent (avant le pattern "haricot" → légume)
+        // "pois chiches" → féculent (avant "pois" → légume)
+
+        // Vérification d'abord dans féculent pour les cas qui matcheraient ailleurs
+        $feculentPriority = [
+            'pomme de terre', 'pommes de terre',
+            'haricots blancs', 'haricots rouges', 'haricots noirs',
+            'pois chiche', 'pois chiches',
+            'flageolets', 'pois cassés',
+        ];
+        foreach ($feculentPriority as $pattern) {
+            if (str_contains($nomLower, mb_strtolower($pattern))) {
+                return $typesIndexedBySlug['feculent'] ?? $typesIndexedBySlug['autre'];
+            }
+        }
+
         foreach (self::TYPE_PATTERNS as $slug => $patterns) {
             foreach ($patterns as $pattern) {
-                if (str_contains($nomLower, mb_strtolower($pattern))) {
+                $patternLower = mb_strtolower($pattern);
+
+                // Exclure "rôti" comme pattern viande quand c'est un mode de cuisson
+                // (présent dans d'autres contextes comme "chou-fleur rôti")
+                if ($slug === 'viande' && $patternLower === 'rôti') {
+                    // "rôti" comme viande uniquement si c'est un rôti de viande (ex: "rôti de porc")
+                    // On l'ignore comme classificateur standalone
+                    continue;
+                }
+
+                if (str_contains($nomLower, $patternLower)) {
                     return $typesIndexedBySlug[$slug] ?? $typesIndexedBySlug['autre'];
                 }
             }

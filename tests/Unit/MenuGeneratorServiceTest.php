@@ -9,6 +9,8 @@ use App\Service\MenuScoringService;
 use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * MenuScoringService is final; we use the real instance.
@@ -25,7 +27,18 @@ class MenuGeneratorServiceTest extends TestCase
     {
         $this->repo    = $this->createMock(RecetteRepository::class);
         $scoring       = new MenuScoringService();
-        $this->service = new MenuGeneratorService($this->repo, $scoring);
+
+        // Cache passthrough : exécute toujours le callback (pas de mise en cache dans les tests)
+        $cache = $this->createMock(CacheInterface::class);
+        $cache->method('get')->willReturnCallback(
+            function (string $key, callable $callback) {
+                $item = $this->createMock(ItemInterface::class);
+                $item->method('expiresAfter')->willReturnSelf();
+                return $callback($item);
+            }
+        );
+
+        $this->service = new MenuGeneratorService($this->repo, $scoring, $cache);
     }
 
     /** Create a Recette mock with no ingredients (score = 0). */

@@ -44,8 +44,10 @@ class PatchUserEndpoint extends AbstractController
     )]
     public function __invoke(Request $request): JsonResponse
     {
-        /** @var User $user */
         $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw new \LogicException('Cet endpoint nécessite une authentification JWT (ROLE_USER).');
+        }
 
         $data = json_decode($request->getContent(), true) ?? [];
 
@@ -60,7 +62,7 @@ class PatchUserEndpoint extends AbstractController
                 new Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.'),
             ]);
             foreach ($violations as $v) {
-                $errors['firstName'] = $v->getMessage();
+                $errors['firstName'][] = $v->getMessage();
             }
         }
 
@@ -70,7 +72,7 @@ class PatchUserEndpoint extends AbstractController
                 new Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.'),
             ]);
             foreach ($violations as $v) {
-                $errors['lastName'] = $v->getMessage();
+                $errors['lastName'][] = $v->getMessage();
             }
         }
 

@@ -232,7 +232,60 @@ class GetRecetteEndpointTest extends ApiTestCase
         $this->assertSame('portion', $json['nutrition'][0]['contexte']);
     }
 
-    // ── Test 13 : filtre ?type_ingredient=viande ─────────────────────────────
+    // ── Test 15 : filtres combinés tag + difficulte ───────────────────────────
+
+    public function testListFiltersCombinesTagEtDifficulte(): void
+    {
+        $this->client->request(
+            'GET',
+            '/api/recettes?tag=Viande&difficulte=Facile',
+            [],
+            [],
+            $this->authHeaders($this->token),
+        );
+
+        $this->assertResponseIsSuccessful();
+        $json = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Chaque résultat doit avoir le tag ET la difficulté demandés
+        foreach ($json['data'] as $item) {
+            $this->assertContains('Viande', $item['tags'], 'Chaque recette doit avoir le tag "Viande"');
+            $this->assertSame('Facile', $item['difficulte'], 'Chaque recette doit être de difficulté "Facile"');
+        }
+    }
+
+    // ── Test 16 : filtre ?saison=abc retourne 400 ────────────────────────────
+
+    public function testListFilterSaisonInvalideRetourne400(): void
+    {
+        $this->client->request('GET', '/api/recettes?saison=abc', [], [], $this->authHeaders($this->token));
+        $this->assertResponseStatusCodeSame(400);
+
+        $json = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertArrayHasKey('error', $json);
+    }
+
+    public function testListFilterSaisonHorsPlageRetourne400(): void
+    {
+        $this->client->request('GET', '/api/recettes?saison=13', [], [], $this->authHeaders($this->token));
+        $this->assertResponseStatusCodeSame(400);
+
+        $this->client->request('GET', '/api/recettes?saison=0', [], [], $this->authHeaders($this->token));
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    // ── Test 17 : page au-delà du total retourne une liste vide ─────────────
+
+    public function testListPaginationPageDepasseTotalRetourneListeVide(): void
+    {
+        $this->client->request('GET', '/api/recettes?page=999&limit=20', [], [], $this->authHeaders($this->token));
+
+        $this->assertResponseIsSuccessful();
+        $json = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->assertEmpty($json['data'], 'Une page au-delà du total doit retourner data vide');
+        $this->assertGreaterThan(0, $json['meta']['total'], 'Le total doit toujours être correct');
+    }
 
     public function testListFilterByTypeIngredient(): void
     {

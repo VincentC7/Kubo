@@ -9,6 +9,7 @@ use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/recettes', name: 'api_recettes_list', methods: ['GET'])]
@@ -115,6 +116,24 @@ class GetRecetteListEndpoint extends AbstractController
         $page  = max(1, (int) $request->query->get('page', 1));
         $limit = min(100, max(1, (int) $request->query->get('limit', 20)));
 
+        // Validation du paramètre saison : doit être un entier entre 1 et 12
+        $saisonRaw = $request->query->get('saison');
+        if ($saisonRaw !== null && $saisonRaw !== '') {
+            if (!ctype_digit((string) $saisonRaw)) {
+                return $this->json(
+                    ['error' => 'Le paramètre "saison" doit être un entier entre 1 et 12.'],
+                    Response::HTTP_BAD_REQUEST,
+                );
+            }
+            $saisonInt = (int) $saisonRaw;
+            if ($saisonInt < 1 || $saisonInt > 12) {
+                return $this->json(
+                    ['error' => 'Le paramètre "saison" doit être compris entre 1 et 12.'],
+                    Response::HTTP_BAD_REQUEST,
+                );
+            }
+        }
+
         $filters = array_filter([
             'q'               => $request->query->get('q'),
             'tag'             => $request->query->get('tag'),
@@ -122,7 +141,7 @@ class GetRecetteListEndpoint extends AbstractController
             'temps_max'       => $request->query->get('temps_max'),
             'ingredient'      => $request->query->get('ingredient'),
             'type_ingredient' => $request->query->get('type_ingredient'),
-            'saison'          => $request->query->get('saison'),
+            'saison'          => $saisonRaw,
         ], fn ($v) => $v !== null && $v !== '');
 
         $result = $repository->findPaginated($filters, $page, $limit);

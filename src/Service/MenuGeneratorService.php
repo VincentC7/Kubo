@@ -4,13 +4,15 @@ namespace App\Service;
 
 use App\Entity\Recette;
 use App\Repository\RecetteRepository;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 /**
  * Orchestre la génération du catalogue hebdomadaire.
  *
  * ## Catalogue (buildOrderedCatalogue)
  *
- * 1. Charge toutes les recettes (eager-load ingrédients + types)
+ * 1. Charge toutes les recettes (eager-load ingrédients + types) — résultat mis en cache 1h
  * 2. Score chaque recette via MenuScoringService
  * 3. Sépare en deux groupes :
  *    - Groupe A (score > 0) : trié par score DESC, puis shuffle déterministe des ex-aequo
@@ -22,29 +24,89 @@ use App\Repository\RecetteRepository;
  * La seed est : crc32($userId . $isoYear . $isoWeek)
  * → même user + même semaine = même catalogue.
  * → deux users différents ou deux semaines différentes = résultats différents.
+ *
+ * ## Cache
+ *
+ * Le catalogue ordonné est mis en cache par clé `catalogue_{userId}_{isoYear}_{isoWeek}`
+ * avec un TTL de 1 heure. Le résultat étant déterministe, il n'y a aucun risque
+ * de servir un résultat incohérent entre les pages.
  */
 final class MenuGeneratorService
 {
     /** Nombre de recettes dans la sélection "premium" du catalogue */
     public const CATALOGUE_SIZE = 70;
 
+    /** TTL du cache catalogue en secondes (1 heure) */
+    private const CACHE_TTL = 3600;
+
     public function __construct(
         private readonly RecetteRepository  $recetteRepository,
         private readonly MenuScoringService $scoringService,
+        private readonly CacheInterface     $cache,
     ) {}
 
     /**
      * Retourne le catalogue ordonné complet (toutes les recettes).
      * Les CATALOGUE_SIZE premières sont la sélection scorée.
      * Les suivantes sont le reste dans un ordre aléatoire déterministe.
+     * Le résultat est mis en cache 1h par (userId, isoYear, isoWeek).
      *
      * @return array{recettes: Recette[], total: int, catalogue_size: int}
      */
     public function buildOrderedCatalogue(string|null $userId, int $isoYear, int $isoWeek): array
     {
-        $allRecettes = $this->recetteRepository->findAllForMenu();
+        $cacheKey = sprintf(
+            'catalogue_%s_%d_%02d',
+            $userId ?? 'guest',
+            $isoYear,
+            $isoWeek,
+        );
+
+        return $this->cache->get($cacheKey, function (ItemInterface $item) use ($userId, $isoYear, $isoWeek): array {
+            $item->expiresAfter(self::CACHE_TTL);
+
+            return $this->computeOrderedCatalogue($userId, $isoYear, $isoWeek);
+        });
+    }
+
+    /**
+     * Retourne une page du catalogue.
+     *
+     * @return array{recettes: Recette[], total: int, catalogue_size: int}
+     */
+    public function buildCataloguePage(
+        string|null $userId,
+        int    $isoYear,
+        int    $isoWeek,
+        int    $page,
+        int    $limit,
+    ): array {
+        $catalogue = $this->buildOrderedCatalogue($userId, $isoYear, $isoWeek);
+
+        $offset   = ($page - 1) * $limit;
+        $recettes = array_slice($catalogue['recettes'], $offset, $limit);
+
+        return [
+            'recettes'       => $recettes,
+            'total'          => $catalogue['total'],
+            'catalogue_size' => $catalogue['catalogue_size'],
+        ];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Helpers privés
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Calcul effectif du catalogue (appelé uniquement en cas de cache miss).
+     *
+     * @return array{recettes: Recette[], total: int, catalogue_size: int}
+     */
+    private function computeOrderedCatalogue(string|null $userId, int $isoYear, int $isoWeek): array
+    {
+        $allRecettes  = $this->recetteRepository->findAllForMenu();
         $currentMonth = $this->currentMonth($isoYear, $isoWeek);
-        $seed = $this->computeSeed($userId, $isoYear, $isoWeek);
+        $seed         = $this->computeSeed($userId, $isoYear, $isoWeek);
 
         // Score chaque recette
         $scored = [];
@@ -63,7 +125,6 @@ final class MenuGeneratorService
         usort($groupA, fn ($a, $b) => $b['score'] <=> $a['score']);
 
         // Shuffle déterministe des ex-aequo dans le groupe A
-        // (regrouper par score, shuffler chaque groupe)
         $groupA = $this->deterministicShuffleByScore($groupA, $seed);
 
         // Shuffle déterministe du groupe B
@@ -78,34 +139,6 @@ final class MenuGeneratorService
             'catalogue_size' => min(self::CATALOGUE_SIZE, count($ordered)),
         ];
     }
-
-    /**
-     * Retourne une page du catalogue.
-     *
-     * @return array{recettes: Recette[], total: int, catalogue_size: int}
-     */
-    public function buildCataloguePage(
-        string|null $userId,
-        int    $isoYear,
-        int    $isoWeek,
-        int    $page,
-        int    $limit,
-    ): array {
-        $catalogue = $this->buildOrderedCatalogue($userId, $isoYear, $isoWeek);
-
-        $offset  = ($page - 1) * $limit;
-        $recettes = array_slice($catalogue['recettes'], $offset, $limit);
-
-        return [
-            'recettes'       => $recettes,
-            'total'          => $catalogue['total'],
-            'catalogue_size' => $catalogue['catalogue_size'],
-        ];
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // Helpers privés
-    // ──────────────────────────────────────────────────────────────────────────
 
     /**
      * Shuffle déterministe d'un tableau en utilisant une seed PHP.

@@ -67,7 +67,7 @@
 
 ## 📋 Prérequis
 
-- PHP 8.2 ou supérieur
+- PHP 8.4 ou supérieur
 - Composer
 - Docker et Docker Compose
 - PostgreSQL (via Docker)
