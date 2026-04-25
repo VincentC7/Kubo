@@ -10,7 +10,7 @@ use App\Tests\ApiTestCase;
  * - /api/recettes          → public (X-Api-Key only, no JWT)
  * - /api/ingredients/saison → public (X-Api-Key only, no JWT)
  */
-class AccessControlTest extends ApiTestCase
+class AccessControlEndpointTest extends ApiTestCase
 {
     // ── /api/catalogue is public (no JWT required) ────────────────────────────
 

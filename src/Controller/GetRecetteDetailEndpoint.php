@@ -37,7 +37,7 @@ use Symfony\Component\Routing\Attribute\Route;
         ],
     ),
 )]
-class RecetteDetailController extends AbstractController
+class GetRecetteDetailEndpoint extends AbstractController
 {
     public function __invoke(string $uuid, RecetteRepository $repository): JsonResponse
     {

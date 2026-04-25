@@ -9,7 +9,7 @@ use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 
-class CatalogueApiTest extends ApiTestCase
+class GetCatalogueEndpointTest extends ApiTestCase
 {
     private const WEEK = '2026-W12';
 

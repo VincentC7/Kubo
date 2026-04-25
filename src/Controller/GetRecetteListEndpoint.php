@@ -108,7 +108,7 @@ use Symfony\Component\Routing\Attribute\Route;
         ],
     ),
 )]
-class RecetteListController extends AbstractController
+class GetRecetteListEndpoint extends AbstractController
 {
     public function __invoke(Request $request, RecetteRepository $repository): JsonResponse
     {

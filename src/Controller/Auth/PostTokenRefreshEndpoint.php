@@ -12,7 +12,7 @@ use OpenApi\Attributes as OA;
  * Le firewall gesdinet intercepte la requête et retourne une réponse avant d'atteindre le controller.
  */
 #[OA\Tag(name: 'Authentification')]
-class RefreshController
+class PostTokenRefreshEndpoint
 {
     #[Route('/api/token/refresh', name: 'api_token_refresh', methods: ['POST'])]
     #[OA\Post(

@@ -20,7 +20,7 @@ use OpenApi\Attributes as OA;
 use Nelmio\ApiDocBundle\Attribute\Model;
 
 #[OA\Tag(name: 'Authentification')]
-class RegisterController extends AbstractController
+class PostRegisterEndpoint extends AbstractController
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,

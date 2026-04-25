@@ -7,7 +7,7 @@ use App\Tests\ApiTestCase;
 /**
  * Tests that the X-Api-Key middleware correctly guards /api/* routes.
  */
-class ApiKeyTest extends ApiTestCase
+class ApiKeyEndpointTest extends ApiTestCase
 {
     // ── Without any key ───────────────────────────────────────────────────────
 

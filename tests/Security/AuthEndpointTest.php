@@ -9,7 +9,7 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 /**
  * Tests register, login and token refresh flows.
  */
-class AuthTest extends ApiTestCase
+class AuthEndpointTest extends ApiTestCase
 {
     protected function setUp(): void
     {

@@ -47,7 +47,7 @@ use Symfony\Component\Routing\Attribute\Route;
     ),
 )]
 #[OA\Response(response: 400, description: 'Paramètre mois invalide (doit être entre 1 et 12)')]
-class SaisonController extends AbstractController
+class GetSaisonEndpoint extends AbstractController
 {
     public function __invoke(Request $request, IngredientRepository $repository): JsonResponse
     {

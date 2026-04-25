@@ -10,7 +10,7 @@ use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 
-class RecetteApiTest extends ApiTestCase
+class GetRecetteEndpointTest extends ApiTestCase
 {
     private string $uuidPoulet;
     private string $token;

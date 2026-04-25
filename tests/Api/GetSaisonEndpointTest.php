@@ -9,7 +9,7 @@ use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 
-class SaisonApiTest extends ApiTestCase
+class GetSaisonEndpointTest extends ApiTestCase
 {
     private string $token;
 

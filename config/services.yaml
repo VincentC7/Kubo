@@ -27,7 +27,7 @@ services:
         arguments:
             $apiKey: '%env(API_KEY)%'
 
-    # Rate limiter : alias explicite pour l'injection dans RegisterController
-    App\Controller\Auth\RegisterController:
+    # Rate limiter : alias explicite pour l'injection dans PostRegisterEndpoint
+    App\Controller\Auth\PostRegisterEndpoint:
         arguments:
             $registerApiLimiter: '@limiter.register_api'

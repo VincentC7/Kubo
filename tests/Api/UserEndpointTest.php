@@ -7,7 +7,7 @@ use App\Tests\ApiTestCase;
 /**
  * Tests pour PATCH /api/user et POST /api/user/password.
  */
-class MeTest extends ApiTestCase
+class UserEndpointTest extends ApiTestCase
 {
     // ── PATCH /api/user ─────────────────────────────────────────────────────────
 

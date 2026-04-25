@@ -52,7 +52,7 @@ DESC,
     content: new OA\JsonContent(ref: new Model(type: CatalogueDto::class)),
 )]
 #[OA\Response(response: 400, description: 'Paramètre week invalide')]
-class CatalogueController extends AbstractController
+class GetCatalogueEndpoint extends AbstractController
 {
     public function __invoke(Request $request, MenuGeneratorService $generator): JsonResponse
     {
