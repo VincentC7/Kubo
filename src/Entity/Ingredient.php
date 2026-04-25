@@ -10,7 +10,7 @@ use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: IngredientRepository::class)]
-#[ORM\Table(name: 'ingredients')]
+#[ORM\Table(name: 'ingredients', schema: 'recette')]
 class Ingredient
 {
     #[ORM\Id]

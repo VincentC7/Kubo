@@ -8,7 +8,7 @@ use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: NutritionFaitRepository::class)]
-#[ORM\Table(name: 'nutrition_faits')]
+#[ORM\Table(name: 'nutrition_faits', schema: 'recette')]
 #[ORM\UniqueConstraint(name: 'uq_nutrition_recette_contexte', columns: ['recette_id', 'contexte'])]
 class NutritionFait
 {

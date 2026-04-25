@@ -11,7 +11,7 @@ use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: RecetteRepository::class)]
-#[ORM\Table(name: 'recettes')]
+#[ORM\Table(name: 'recettes', schema: 'recette')]
 class Recette
 {
     #[ORM\Id]
@@ -45,15 +45,15 @@ class Recette
     private ?string $source = null;
 
     #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'recettes')]
-    #[ORM\JoinTable(name: 'recette_tags')]
+    #[ORM\JoinTable(name: 'recette_tags', schema: 'recette')]
     private Collection $tags;
 
     #[ORM\ManyToMany(targetEntity: Allergene::class, inversedBy: 'recettes')]
-    #[ORM\JoinTable(name: 'recette_allergenes')]
+    #[ORM\JoinTable(name: 'recette_allergenes', schema: 'recette')]
     private Collection $allergenes;
 
     #[ORM\ManyToMany(targetEntity: Ustensile::class, inversedBy: 'recettes')]
-    #[ORM\JoinTable(name: 'recette_ustensiles')]
+    #[ORM\JoinTable(name: 'recette_ustensiles', schema: 'recette')]
     private Collection $ustensiles;
 
     #[ORM\OneToMany(targetEntity: RecetteIngredient::class, mappedBy: 'recette', cascade: ['persist', 'remove'], orphanRemoval: true)]
