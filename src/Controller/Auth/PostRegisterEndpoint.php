@@ -4,7 +4,7 @@ namespace App\Controller\Auth;
 
 use App\Dto\RegisterDto;
 use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Entity\UserSettings;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,11 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use OpenApi\Attributes as OA;
-use Nelmio\ApiDocBundle\Attribute\Model;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 #[OA\Tag(name: 'Authentification')]
 class PostRegisterEndpoint extends AbstractController
@@ -26,7 +25,6 @@ class PostRegisterEndpoint extends AbstractController
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $passwordHasher,
         private readonly ValidatorInterface $validator,
-        private readonly UserRepository $userRepository,
         #[Target('registerApi')]
         private readonly RateLimiterFactory $registerApiLimiter,
     ) {
@@ -89,14 +87,6 @@ class PostRegisterEndpoint extends AbstractController
             return $this->json(['errors' => $errors], Response::HTTP_BAD_REQUEST);
         }
 
-        // Vérification unicité email
-        if ($this->userRepository->findOneBy(['email' => $dto->email]) !== null) {
-            return $this->json(
-                ['error' => 'Un compte existe déjà avec cet email.'],
-                Response::HTTP_CONFLICT,
-            );
-        }
-
         // Création du user
         $user = new User();
         $user->setFirstName($dto->firstName);
@@ -107,8 +97,18 @@ class PostRegisterEndpoint extends AbstractController
             $this->passwordHasher->hashPassword($user, $dto->password),
         );
 
+        $settings = new UserSettings($user);
         $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        $this->entityManager->persist($settings);
+
+        try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException) {
+            return $this->json(
+                ['error' => 'Un compte existe déjà avec cet email.'],
+                Response::HTTP_CONFLICT,
+            );
+        }
 
         return $this->json(
             ['message' => 'Compte créé avec succès.'],

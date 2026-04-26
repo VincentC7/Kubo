@@ -4,12 +4,14 @@ namespace App\Tests;
 
 use App\DataFixtures\AppFixtures;
 use App\DataFixtures\RecetteFixtures;
+use App\DataFixtures\UserDataFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Cache\Adapter\AdapterInterface;
 
 /**
  * Base class for all API tests.
@@ -20,28 +22,31 @@ abstract class ApiTestCase extends WebTestCase
 {
     protected KernelBrowser $client;
 
-    /** API key defined in .env (or .env.test) */
-    private const API_KEY_ENV = 'API_KEY';
-
     protected function setUp(): void
     {
         $this->client = static::createClient();
+        // Purge le cache rate limiter pour éviter les 429 entre les tests
+        /** @var AdapterInterface $rateLimiterCache */
+        $rateLimiterCache = static::getContainer()->get('cache.rate_limiter');
+        $rateLimiterCache->clear();
         $this->loadFixtures();
     }
 
     // ── Fixture loading ───────────────────────────────────────────────────────
 
-    /**
-     * Override in subclasses to load additional or different fixtures.
-     */
     protected function loadFixtures(): void
     {
         /** @var EntityManagerInterface $em */
         $em = static::getContainer()->get(EntityManagerInterface::class);
 
+        $appFixtures     = static::getContainer()->get(AppFixtures::class);
+        $recetteFixtures = new RecetteFixtures();
+        $userFixtures    = static::getContainer()->get(UserDataFixtures::class);
+
         $loader = new Loader();
-        $loader->addFixture(static::getContainer()->get(AppFixtures::class));
-        $loader->addFixture(new RecetteFixtures());
+        $loader->addFixture($appFixtures);
+        $loader->addFixture($recetteFixtures);
+        $loader->addFixture($userFixtures);
 
         $purger   = new ORMPurger($em);
         $executor = new ORMExecutor($em, $purger);
@@ -50,17 +55,11 @@ abstract class ApiTestCase extends WebTestCase
 
     // ── API key helpers ───────────────────────────────────────────────────────
 
-    /**
-     * Returns the API key from the container parameters / env.
-     */
     protected function apiKey(): string
     {
         return (string) ($_ENV['API_KEY'] ?? $_SERVER['API_KEY'] ?? getenv('API_KEY'));
     }
 
-    /**
-     * Returns the default server headers with X-Api-Key already set.
-     */
     protected function apiHeaders(array $extra = []): array
     {
         return array_merge(['HTTP_X-API-KEY' => $this->apiKey()], $extra);
@@ -68,9 +67,6 @@ abstract class ApiTestCase extends WebTestCase
 
     // ── JWT helpers ───────────────────────────────────────────────────────────
 
-    /**
-     * Logs in and returns the JWT access token.
-     */
     protected function loginAs(string $email, string $password): string
     {
         $this->client->request(
@@ -78,9 +74,7 @@ abstract class ApiTestCase extends WebTestCase
             '/api/login',
             [],
             [],
-            array_merge(
-                $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
-            ),
+            $this->apiHeaders(['CONTENT_TYPE' => 'application/json']),
             json_encode(['email' => $email, 'password' => $password]),
         );
 
@@ -93,14 +87,36 @@ abstract class ApiTestCase extends WebTestCase
         return $data['token'];
     }
 
-    /**
-     * Returns server headers with both X-Api-Key and Authorization: Bearer set.
-     */
     protected function authHeaders(string $token, array $extra = []): array
     {
         return $this->apiHeaders(array_merge(
             ['HTTP_AUTHORIZATION' => 'Bearer ' . $token],
             $extra,
         ));
+    }
+
+    /**
+     * Shortcut : login as main user and return auth headers with JSON content-type.
+     */
+    protected function userJsonHeaders(): array
+    {
+        $token = $this->loginAs('user@kubo.dev', 'Password1');
+        return $this->authHeaders($token, ['CONTENT_TYPE' => 'application/json']);
+    }
+
+    /**
+     * Shortcut : login as second user.
+     */
+    protected function otherJsonHeaders(): array
+    {
+        $token = $this->loginAs('other@kubo.dev', 'Password1');
+        return $this->authHeaders($token, ['CONTENT_TYPE' => 'application/json']);
+    }
+
+    // ── JSON response helpers ─────────────────────────────────────────────────
+
+    protected function json(): array
+    {
+        return json_decode($this->client->getResponse()->getContent(), true);
     }
 }

@@ -222,7 +222,11 @@ Toutes les entités utilisent `Symfony\Component\Uid\Uuid` pour les UUIDs.
 
 ---
 
-## Conventions
+## Règles OpenCode
+
+- **Ne jamais faire `git push` sans autorisation explicite de l'utilisateur.** Commit uniquement, push uniquement si demandé.
+
+---
 
 - Controllers : pattern "single-action invokable" nommés `VerbResourceEndpoint`
 - DTOs : `final readonly` + `JsonSerializable`
