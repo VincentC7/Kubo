@@ -122,10 +122,11 @@ class RecetteRepository extends ServiceEntityRepository
     public function findAllForMenu(): array
     {
         return $this->createQueryBuilder('r')
-            ->addSelect('ri', 'ing', 'type')
+            ->addSelect('ri', 'ing', 'type', 'tags')
             ->leftJoin('r.recetteIngredients', 'ri')
             ->leftJoin('ri.ingredient', 'ing')
             ->leftJoin('ing.type', 'type')
+            ->leftJoin('r.tags', 'tags')
             ->getQuery()
             ->getResult();
     }

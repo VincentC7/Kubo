@@ -7,6 +7,7 @@ use App\Repository\RecetteRepository;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -111,6 +112,11 @@ use Symfony\Component\Routing\Attribute\Route;
 )]
 class GetRecetteListEndpoint extends AbstractController
 {
+    public function __construct(
+        #[Autowire('%env(MEDIA_BASE_URL)%')]
+        private readonly string $mediaBaseUrl,
+    ) {}
+
     public function __invoke(Request $request, RecetteRepository $repository): JsonResponse
     {
         $page  = max(1, (int) $request->query->get('page', 1));
@@ -149,7 +155,7 @@ class GetRecetteListEndpoint extends AbstractController
         $pages  = $limit > 0 ? (int) ceil($total / $limit) : 1;
 
         $data = array_map(
-            fn ($recette) => RecetteListItemDto::fromEntity($recette),
+            fn ($recette) => RecetteListItemDto::fromEntity($recette, $this->mediaBaseUrl),
             $result['items'],
         );
 

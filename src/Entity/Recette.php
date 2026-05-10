@@ -38,8 +38,12 @@ class Recette
     #[ORM\Column]
     private int $nbPersonnes = 1;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $imageName = null;
+
+    /** Internal only — never exposed in API responses */
     #[ORM\Column(length: 512, nullable: true)]
-    private ?string $imageUrl = null;
+    private ?string $imageSourceUrl = null;
 
     #[ORM\Column(length: 512, nullable: true)]
     private ?string $source = null;
@@ -155,14 +159,26 @@ class Recette
         return $this;
     }
 
-    public function getImageUrl(): ?string
+    public function getImageName(): ?string
     {
-        return $this->imageUrl;
+        return $this->imageName;
     }
 
-    public function setImageUrl(?string $imageUrl): static
+    public function setImageName(?string $imageName): static
     {
-        $this->imageUrl = $imageUrl;
+        $this->imageName = $imageName;
+
+        return $this;
+    }
+
+    public function getImageSourceUrl(): ?string
+    {
+        return $this->imageSourceUrl;
+    }
+
+    public function setImageSourceUrl(?string $imageSourceUrl): static
+    {
+        $this->imageSourceUrl = $imageSourceUrl;
 
         return $this;
     }

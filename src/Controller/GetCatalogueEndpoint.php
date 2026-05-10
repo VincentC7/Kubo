@@ -9,6 +9,7 @@ use App\Service\MenuGeneratorService;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -54,6 +55,11 @@ DESC,
 #[OA\Response(response: 400, description: 'Paramètre week invalide')]
 class GetCatalogueEndpoint extends AbstractController
 {
+    public function __construct(
+        #[Autowire('%env(MEDIA_BASE_URL)%')]
+        private readonly string $mediaBaseUrl,
+    ) {}
+
     public function __invoke(Request $request, MenuGeneratorService $generator): JsonResponse
     {
         /** @var User|null $user */
@@ -78,7 +84,7 @@ class GetCatalogueEndpoint extends AbstractController
         $result = $generator->buildCataloguePage($userId, $isoYear, $isoWeek, $page, $limit);
 
         $dtos = array_map(
-            fn ($recette) => RecetteListItemDto::fromEntity($recette),
+            fn ($recette) => RecetteListItemDto::fromEntity($recette, $this->mediaBaseUrl),
             $result['recettes'],
         );
 

@@ -32,7 +32,7 @@ final readonly class RecetteDetailDto implements \JsonSerializable
         public array $nutrition,
     ) {}
 
-    public static function fromEntity(Recette $recette): self
+    public static function fromEntity(Recette $recette, string $mediaBaseUrl = ''): self
     {
         $tags = array_values(
             array_map(fn ($t) => $t->getNom(), $recette->getTags()->toArray())
@@ -71,7 +71,9 @@ final readonly class RecetteDetailDto implements \JsonSerializable
             uuid: (string) $recette->getId(),
             nom: $recette->getNom(),
             description: $recette->getDescription(),
-            image_url: $recette->getImageUrl(),
+            image_url: $recette->getImageName() !== null && $mediaBaseUrl !== ''
+                ? rtrim($mediaBaseUrl, '/') . '/' . $recette->getImageName()
+                : null,
             source: $recette->getSource(),
             temps_total: $recette->getTempsTotal(),
             temps_preparation: $recette->getTempsPreparation(),
@@ -93,7 +95,6 @@ final readonly class RecetteDetailDto implements \JsonSerializable
             'nom'               => $this->nom,
             'description'       => $this->description,
             'image_url'         => $this->image_url,
-            'source'            => $this->source,
             'temps_total'       => $this->temps_total,
             'temps_preparation' => $this->temps_preparation,
             'difficulte'        => $this->difficulte,

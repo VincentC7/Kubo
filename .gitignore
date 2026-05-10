@@ -49,6 +49,7 @@ composer.phar
 ###< Backup files ###
 
 data/
+/public/images
 
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem

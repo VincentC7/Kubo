@@ -50,6 +50,17 @@ final class Version20260425163519 extends AbstractMigration
         $this->addSql('CREATE TABLE recette.type_ingredients (id UUID NOT NULL, nom VARCHAR(100) NOT NULL, slug VARCHAR(100) NOT NULL, PRIMARY KEY (id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_44C5229F6C6E55B5 ON recette.type_ingredients (nom)');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_44C5229F989D9B62 ON recette.type_ingredients (slug)');
+        $this->addSql("INSERT INTO recette.type_ingredients (id, nom, slug) VALUES
+            (gen_random_uuid(), 'Viande',                'viande'),
+            (gen_random_uuid(), 'Poisson / fruit de mer', 'poisson'),
+            (gen_random_uuid(), 'Légume',                'legume'),
+            (gen_random_uuid(), 'Fruit',                 'fruit'),
+            (gen_random_uuid(), 'Féculent',              'feculent'),
+            (gen_random_uuid(), 'Produit laitier',       'produit_laitier'),
+            (gen_random_uuid(), 'Herbe / épice',         'herbe_epice'),
+            (gen_random_uuid(), 'Condiment / sauce',     'condiment'),
+            (gen_random_uuid(), 'Autre',                 'autre')
+        ");
         $this->addSql('CREATE TABLE auth.users (id UUID NOT NULL, email VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, first_name VARCHAR(100) NOT NULL, last_name VARCHAR(100) NOT NULL, created_at TIMESTAMP(0) WITHOUT TIME ZONE NOT NULL, PRIMARY KEY (id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_18DF2AF8E7927C74 ON auth.users (email)');
         $this->addSql('CREATE TABLE recette.ustensiles (id UUID NOT NULL, nom VARCHAR(150) NOT NULL, PRIMARY KEY (id))');

@@ -271,11 +271,10 @@ class ImportRecettesCommand extends Command
         $description = $data['description'] ?? null;
         $recette->setDescription($description === '-' ? null : $description);
         $recette->setDifficulte($data['difficulte'] ?: null);
+        $recette->setImageSourceUrl($data['image'] ?: null);
         $recette->setTempsTotal($this->parseMinutes($data['temps_total'] ?? ''));
         $recette->setTempsPreparation($this->parseMinutes($data['temps_preparation'] ?? ''));
         $recette->setNbPersonnes((int) ($data['nb_personnes'] ?? 1));
-        $recette->setImageUrl($data['image'] ?: null);
-
         // Tags
         foreach ($data['tags'] ?? [] as $tagNom) {
             $tagNom = $this->normalizeVocabulaire($tagNom);

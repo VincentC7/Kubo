@@ -23,7 +23,7 @@ final readonly class PlanningEntryDto implements \JsonSerializable
             recette: [
                 'id'         => (string) $recette->getId(),
                 'nom'        => $recette->getNom(),
-                'imageUrl'   => $recette->getImageUrl(),
+                'imageUrl'   => $recette->getImageSourceUrl(),
                 'tempsTotal' => $recette->getTempsTotal(),
                 'difficulte' => $recette->getDifficulte(),
             ],

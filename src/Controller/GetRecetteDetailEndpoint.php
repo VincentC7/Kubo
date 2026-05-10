@@ -7,6 +7,7 @@ use App\Repository\RecetteRepository;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -39,6 +40,11 @@ use Symfony\Component\Routing\Attribute\Route;
 )]
 class GetRecetteDetailEndpoint extends AbstractController
 {
+    public function __construct(
+        #[Autowire('%env(MEDIA_BASE_URL)%')]
+        private readonly string $mediaBaseUrl,
+    ) {}
+
     public function __invoke(string $uuid, RecetteRepository $repository): JsonResponse
     {
         $recette = $repository->findOneByUuid($uuid);
@@ -47,6 +53,6 @@ class GetRecetteDetailEndpoint extends AbstractController
             return new JsonResponse(['error' => 'Recette non trouvée.'], Response::HTTP_NOT_FOUND);
         }
 
-        return new JsonResponse(RecetteDetailDto::fromEntity($recette));
+        return new JsonResponse(RecetteDetailDto::fromEntity($recette, $this->mediaBaseUrl));
     }
 }

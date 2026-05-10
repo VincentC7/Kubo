@@ -20,7 +20,7 @@ final readonly class RecetteListItemDto implements \JsonSerializable
         public array $tags,
     ) {}
 
-    public static function fromEntity(Recette $recette): self
+    public static function fromEntity(Recette $recette, string $mediaBaseUrl = ''): self
     {
         $tags = array_values(
             array_map(
@@ -29,11 +29,16 @@ final readonly class RecetteListItemDto implements \JsonSerializable
             )
         );
 
+        $imageName = $recette->getImageName();
+        $imageUrl = $imageName !== null && $mediaBaseUrl !== ''
+            ? rtrim($mediaBaseUrl, '/') . '/' . $imageName
+            : null;
+
         return new self(
             uuid: (string) $recette->getId(),
             nom: $recette->getNom(),
             description: $recette->getDescription(),
-            image_url: $recette->getImageUrl(),
+            image_url: $imageUrl,
             temps_total: $recette->getTempsTotal(),
             difficulte: $recette->getDifficulte(),
             nb_personnes: $recette->getNbPersonnes(),
