@@ -1,33 +1,26 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  php:
+    build: .
     environment:
       APP_ENV: prod
       APP_SECRET: ${APP_SECRET}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-kubo}:${POSTGRES_PASSWORD}@kubodb:5432/${POSTGRES_DB:-kubo}?serverVersion=16&charset=utf8
-      API_KEY: ${API_KEY}
-      JWT_PASSPHRASE: ${JWT_PASSPHRASE}
-      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-'^https?://.*$'}
-    depends_on:
-      kubodb:
-        condition: service_healthy
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?serverVersion=16&charset=utf8
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-*}
     ports:
-      - "${APP_PORT:-80}:80"
-    volumes:
-      - jwt_keys:/var/www/html/config/jwt
-      - app_images:/var/www/html/public/images
+      - "8000:80"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
-  kubodb:
+  db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-kubo}
-      POSTGRES_USER: ${POSTGRES_USER:-kubo}
+      POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
     healthcheck:
-      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-kubo}", "-U", "${POSTGRES_USER:-kubo}"]
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB}", "-U", "${POSTGRES_USER}"]
       timeout: 5s
       retries: 5
       start_period: 60s
@@ -37,5 +30,3 @@ services:
 
 volumes:
   database_data:
-  jwt_keys:
-  app_images:
