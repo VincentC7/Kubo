@@ -15,7 +15,8 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 COPY . .
 
-RUN php bin/console cache:warmup --env=prod || true
+RUN php bin/console cache:warmup --env=prod || true \
+    && chown -R www-data:www-data var/
 
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
