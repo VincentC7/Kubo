@@ -157,10 +157,10 @@ test-connection: ## Teste la connexion à PostgreSQL
 	@./test-connection.sh
 
 shell-db: ## Ouvre un shell dans le conteneur de base de données
-	$(DOCKER_COMPOSE) exec kubodb sh
+	$(DOCKER_COMPOSE) exec db sh
 
 psql: ## Ouvre psql dans le conteneur de base de données
-	$(DOCKER_COMPOSE) exec kubodb psql -U db_user -d kubo
+	$(DOCKER_COMPOSE) exec db psql -U db_user -d kubo
 
 clean: ## Nettoie le projet (cache, logs)
 	@echo "$(YELLOW)Nettoyage du projet...$(RESET)"
