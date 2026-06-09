@@ -8,6 +8,8 @@ services:
       CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN:-*}
     ports:
       - "8000:80"
+    volumes:
+      - /opt/kubo-images:/var/www/html/public/images
     depends_on:
       db:
         condition: service_healthy
