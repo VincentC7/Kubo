@@ -34,15 +34,16 @@ class LinkImagesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('data-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les fichiers JSON', null)
+            ->addOption('data-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les fichiers JSON (défaut : ../kubo-data/recettes/valid)', null)
+            ->addOption('image-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les images (défaut : data/image)', null)
             ->addOption('batch-size', null, InputOption::VALUE_OPTIONAL, 'Nombre de recettes par flush', '100');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dataDir = $input->getOption('data-dir') ?? $this->projectDir . '/data';
-        $imageDir = $dataDir . '/image';
+        $dataDir = $input->getOption('data-dir') ?? $this->projectDir . '/kubo-data/recettes/valid';
+        $imageDir = $input->getOption('image-dir') ?? $this->projectDir . '/data/image';
         $batchSize = (int) $input->getOption('batch-size');
 
         $files = glob($dataDir . '/*.json');

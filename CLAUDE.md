@@ -31,8 +31,12 @@ php bin/console doctrine:database:drop --force --env=test
 php bin/console doctrine:database:create --env=test
 php bin/console doctrine:migrations:migrate --no-interaction --env=test
 
-# Import recipes (needs -d memory_limit=1G for ~2150 recipes)
-php -d memory_limit=1G bin/console app:import-recettes --skip-existing
+# Import recipes depuis kubo-data/ (submodule git@github.com:VincentC7/kubo-data.git)
+make db-data-update      # git submodule update --remote (tire les derniers JSON)
+make db-import           # importe les recettes, skip existantes
+make db-import-all       # réimporte tout (utile après db-reset)
+make db-inject-ids       # injecte les UUID recette_id dans les JSON source
+make db-link-images      # lie data/image/*.jpg aux recettes via recette_id
 
 # Utilities
 make psql           # PostgreSQL client in container

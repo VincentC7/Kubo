@@ -121,6 +121,21 @@ db-validate: ## Valide le schéma de la base de données
 db-fixtures: ## Charge les fixtures
 	$(CONSOLE) doctrine:fixtures:load --no-interaction
 
+db-data-update: ## Met à jour le submodule kubo-data depuis GitHub
+	git submodule update --remote kubo-data
+
+db-import: ## Importe les recettes depuis kubo-data/recettes/valid (skip existantes)
+	php -d memory_limit=1G bin/console app:import-recettes --skip-existing
+
+db-import-all: ## Réimporte toutes les recettes depuis kubo-data/recettes/valid
+	php -d memory_limit=1G bin/console app:import-recettes
+
+db-inject-ids: ## Injecte les recette_id UUID dans les fichiers JSON source
+	$(CONSOLE) app:inject-recette-ids
+
+db-link-images: ## Lie les images locales (data/image/) aux recettes via recette_id
+	$(CONSOLE) app:link-images
+
 check: ## Vérifie la configuration du projet
 	@chmod +x bin/check-config
 	@./bin/check-config

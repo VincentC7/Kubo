@@ -1,0 +1,3 @@
+[submodule "kubo-data"]
+	path = kubo-data
+	url = git@github.com:VincentC7/kubo-data.git

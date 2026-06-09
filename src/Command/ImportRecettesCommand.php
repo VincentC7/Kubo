@@ -65,7 +65,7 @@ class ImportRecettesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('data-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les fichiers JSON', null)
+            ->addOption('data-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les fichiers JSON (défaut : ../kubo-data/recettes/valid)', null)
             ->addOption('batch-size', null, InputOption::VALUE_OPTIONAL, 'Nombre de recettes par flush', '50')
             ->addOption('limit', null, InputOption::VALUE_OPTIONAL, 'Limite le nombre de fichiers à importer (pour tests)')
             ->addOption('skip-existing', null, InputOption::VALUE_NONE, 'Ignore les recettes déjà présentes en base');
@@ -75,7 +75,7 @@ class ImportRecettesCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $dataDir = $input->getOption('data-dir') ?? $this->projectDir . '/data';
+        $dataDir = $input->getOption('data-dir') ?? $this->projectDir . '/kubo-data/recettes/valid';
         $batchSize = (int) $input->getOption('batch-size');
         $limit = $input->getOption('limit') !== null ? (int) $input->getOption('limit') : null;
         $skipExisting = (bool) $input->getOption('skip-existing');

@@ -30,13 +30,13 @@ class InjectRecetteIdsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('data-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les fichiers JSON', null);
+        $this->addOption('data-dir', null, InputOption::VALUE_OPTIONAL, 'Répertoire contenant les fichiers JSON (défaut : ../kubo-data/recettes/valid)', null);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dataDir = $input->getOption('data-dir') ?? $this->projectDir . '/data';
+        $dataDir = $input->getOption('data-dir') ?? $this->projectDir . '/kubo-data/recettes/valid';
 
         $files = glob($dataDir . '/*.json');
         if ($files === false || count($files) === 0) {
