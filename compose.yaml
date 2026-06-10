@@ -11,6 +11,7 @@ services:
     volumes:
       - /opt/kubo-images:/var/www/html/public/images
       - /opt/kubo-data:/opt/kubo-data:ro
+      - /opt/kubo-jwt:/var/www/html/config/jwt:ro
     depends_on:
       db:
         condition: service_healthy
